@@ -1,0 +1,2 @@
+//Turns off loading screen with timer.
+Set(vTimeDelay, true)
