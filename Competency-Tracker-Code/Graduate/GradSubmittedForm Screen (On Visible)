@@ -1,0 +1,11 @@
+//GradSubmittedForm Screen (On Visible)
+//Turns off loading screen.
+Set(
+vLoadSpin,
+false
+);
+//Turns off timer delay.
+Set(
+vTimeDelay,
+false
+)
