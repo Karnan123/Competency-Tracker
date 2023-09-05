@@ -1,0 +1,5 @@
+//LMSubmittedForm (Onvisible)
+//Turns off the Navigate delay.
+Set(vLoadSpin, false);
+//Turns off timer delay.
+Set(vTimeDelay, false)
