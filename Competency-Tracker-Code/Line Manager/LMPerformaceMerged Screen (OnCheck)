@@ -1,0 +1,234 @@
+//PerformanceMerged Toggle (OnCheck)
+If(
+    vNavigate = false,
+//Turns on the toggle button.
+Set(
+    vStartLoop,
+    false
+);
+//Variable is a loop counter. Increments by 1.
+Set(
+    vAdminInfoCounter,
+    vAdminInfoCounter + 1
+);
+//Adds one to vAdminInfoCounterAhead if it is equal to vAdminInfoCounter.
+If(
+    vAdminInfoCounterAhead < vMaxLoop,
+    If(
+        vAdminInfoCounter = vAdminInfoCounterAhead,
+        Set(
+            vAdminInfoCounterAhead,
+            vAdminInfoCounterAhead + 1
+        );
+    )
+);
+//Continues to turn on the toggle button if vAdminInfoCounterAhead is less than the max number.
+If(
+    vAdminInfoCounterAhead < vMaxLoop,
+    If(
+        vAdminInfoCounter < vAdminInfoCounterAhead,
+        If(
+            vNavigate = false,
+            Set(
+                vStartLoop,
+                true
+            );
+            ,
+            Set(
+                vStartLoop,
+                false
+            );
+            Clear(col_AxisProg);
+            Clear(col_AxisRespProg)
+        )
+    )
+);
+//Collects the approved records and adds the response levels of skills together that have the same date.
+ClearCollect(
+    col_LMLatestApprovedDateFiltered,
+    DropColumns(
+        AddColumns(
+            GroupBy(
+                ShowColumns(
+                    AddColumns(
+                        col_LMLatestApprovedWithID,
+                        "DateFiltered",
+                        Month(DateTime) & "/" & Day(DateTime) & "/" & Year(DateTime)
+                    ),
+                    "DateFiltered",
+                    "ResponseLevel"
+                ),
+                "DateFiltered",
+                "GroupDate"
+            ),
+            "GroupLevelsByDate",
+            Sum(
+                GroupDate,
+                ResponseLevel
+            )
+        ),
+        "GroupDate"
+    )
+);
+//Performs the loop calculations. This collection continues to sum up the first "x" approved records ("x" changes by 1 every loop which increases the records that are summed) and then divides them by the total required levels possible to calculate the percent of skills completed.  
+ForAll(
+    Sequence(1),
+    Collect(
+        col_LMPerformanceLoop,
+        If(
+            !(vCountAccounts = 0) && !(vServiceLineLev = 0) && !IsBlank(vCountAccounts) && !IsBlank(vServiceLineLev), //Here
+            Round(
+                (Sum(
+                    FirstN(
+                        col_LMLatestApprovedDateFiltered,
+                        vAdminInfoCounter
+                    ),
+                    GroupLevelsByDate
+                ) / (vServiceLineLev * vCountAccounts)) * 100,
+                2
+            ),
+            Round(
+                (Sum(
+                    FirstN(
+                        col_LMLatestApprovedDateFiltered,
+                        vAdminInfoCounter
+                    ),
+                    GroupLevelsByDate
+                ) / 1) * 100,
+                2
+            )
+        )
+    )
+);
+If(
+    vAdminInfoCounter = vMaxLoop - 1,
+    //Collects the percent of skills completed from col_LMPerformanceLoop and changes the column name.
+    ClearCollect(
+        col_LMPerformanceProg,
+        RenameColumns(
+            col_LMPerformanceLoop,
+            "Value",
+            "Skills Completed Per Day"
+        )
+    );
+    Clear(col_LMPerformanceLoop);
+    Clear(col_LMPerformanceWithID);
+    //Adds an incrementing ID to each "Skills Completed Per Day" record.
+ForAll(
+        col_LMPerformanceProg,
+        Collect(
+            col_LMPerformanceWithID,
+            Last(
+                FirstN(
+                    AddColumns(
+                        col_LMPerformanceProg,
+                        "AutoNumAdd2",
+                        CountRows(col_LMPerformanceWithID) + 1
+                    ),
+                    CountRows(col_LMPerformanceWithID) + 1
+                )
+            )
+        )
+    );
+    //Merges the "Skills Completed Per Day" records with the distinct dates collected in col_LMLatestApprovedSortByDateWithID.
+Clear(col_LMPerformanceMerged);
+    ClearCollect(
+        col_LMPerformanceMerged,
+        DropColumns(
+            Ungroup(
+                AddColumns(
+                    col_LMPerformanceWithID As Response,
+                    "tempResponseHolder",
+                    Filter(
+                        col_LMLatestApprovedSortByDateWithID,
+                        Lower(AutoNumAdd10) = Lower(Response.AutoNumAdd2)
+                    )
+                ),
+                "tempResponseHolder"
+            ),
+            "AutoNumAdd10"
+        )
+    );
+    
+);
+If(
+    vAdminInfoCounter = vMaxLoop - 1,
+//Checks to see if any date or skill completed columns are missing. If data is present in both columns, then the performance graph is turned on and displays the data.
+    If(
+        !IsBlank(col_LMPerformanceMerged.DateFiltered),
+        If(
+            !IsBlank(col_LMPerformanceMerged.'Skills Completed Per Day'),
+        //Creates a collection that increments by 1 day starting from the eariest date to today's date which is collected from col_LMPerformanceMerged. 
+            ClearCollect (
+                col_IncrementDates,
+                With(
+                    /*{
+                        startDate: DateValue(First(col_LMPerformanceMerged).DateFiltered),
+                        sequenceDays: Sequence(
+                            DateDiff(
+                                DateValue(First(col_LMPerformanceMerged).DateFiltered),
+                                DateValue(Today())
+                            ) + 1
+                        )
+                    },*/
+                    {
+                        startDate: DateValue(First(col_LMPerformanceMerged).DateFiltered),
+                        sequenceDays: If(
+                            IsError(
+                                Sequence(
+                                    DateDiff(
+                                        DateValue(First(col_LMPerformanceMerged).DateFiltered),
+                                        DateValue(Today())
+                                    ) + 1
+                                )
+                            ),
+                            Sequence(0),
+                            Sequence(
+                                DateDiff(
+                                    DateValue(First(col_LMPerformanceMerged).DateFiltered),
+                                    DateValue(Today())
+                                ) + 1
+                            )
+                        )
+                    },
+                    AddColumns(
+                        sequenceDays,
+                        "Date",
+                        DateAdd(
+                            startDate,
+                            Value - 1,
+                            TimeUnit.Days
+                        ),
+                        "Skills Completed",
+                        Blank()
+                    )
+                )
+            );
+        //Variables and counters used to loop through the records in IncrementDates Toggle. Increments by 1. 
+Set(
+                vDateMaxLoop,
+                CountRows(col_IncrementDates) + 1
+            );
+            Set(
+                vDateCounter,
+                0
+            );
+            Set(
+                vDateCounterAhead,
+                1
+            );
+            Set(
+                vDateStartLoop,
+                true
+            );
+        )
+    )
+),
+Set(
+    vStartLoop,
+    false
+);
+Clear(col_AxisProg);
+Clear(col_AxisRespProg);
+Clear(col_LMPerformanceLoop)
+)
