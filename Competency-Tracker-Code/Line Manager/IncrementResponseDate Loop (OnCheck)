@@ -1,0 +1,236 @@
+If(
+    vNavigate = false,
+//Turns on the toggle button.
+Set(
+    vResponsesStartLoop,
+    false
+);
+//Variable is a loop counter. Increments by 1.
+Set(
+    vResponsesCounter,
+    vResponsesCounter + 1
+);
+//Stores dates that are present in both col_LMResponsesDateFiltered and col_IncrementDates.
+Set(
+    vCommonResponsesDate,
+    LookUp(
+        col_LMResponsesDateFiltered,
+        DateFiltered = Text(
+            LookUp(
+                col_LMResponsesIncrementDates,
+                Value = vResponsesCounter
+            ).Date
+        )
+    )
+);
+//Stores the current date retrieved from the collection col_LMResponsesIncrementDates.
+Set(
+    vIncrementResponsesDate,
+    Text(
+        LookUp(
+            col_LMResponsesIncrementDates,
+            Value = vResponsesCounter
+        ).Date
+    )
+);
+//Grabs the previous incremented date from the last loop if vCommonResponseDate is blank.
+If(
+    !IsBlank(vCommonResponsesDate),
+    Set(
+        vOldIncrementResponsesDate,
+        vIncrementResponsesDate
+    )
+);
+//Adds one to vResponsesCounterAhead if it is equal to vResponsesCounter.
+If(
+    vResponsesCounterAhead < vResponsesMaxLoop,
+    If(
+        vResponsesCounter = vResponsesCounterAhead,
+        Set(
+            vResponsesCounterAhead,
+            vResponsesCounterAhead + 1
+        );
+    )
+);
+//Continues to turn on the IncrementRespDates toggle if vResponsesCounterAhead is less than the max number.
+If(
+    vResponsesCounterAhead < vResponsesMaxLoop,
+    If(
+        vResponsesCounter < vResponsesCounterAhead,
+        If(
+            vNavigate = false,
+            Set(
+                vResponsesStartLoop,
+                true
+            ),
+            Set(
+                vResponsesStartLoop,
+                false
+            );
+            Clear(col_AxisProg);
+            Clear(col_AxisRespProg)
+        )
+    )
+);
+//Performs the loop. If a date in col_LMResponsesIncrementDates yields a "Skills Completed Per Day" value from col_LMResponsesDateFiltered then that record is added to the col_LMResponsesLoop. Else 0 is stored in the col_LMResponsesLoop record for that certain date. 
+ForAll(
+    Sequence(1),
+    Collect(
+        col_LMResponsesLoop,
+        If(
+            !IsBlank(vCommonResponsesDate),
+            {
+                Value: vResponsesCounter,
+                'Skills Completed Per Day': If(
+                    !(vResponsesCounter = 0),
+                    Sum(
+                        FirstN(
+                            col_LMResponsesDateFilteredWithID,
+                            Value(
+                                LookUp(
+                                    col_LMResponsesDateFilteredWithID,
+                                    DateFiltered = vIncrementResponsesDate
+                                ).AutoNumAdd18
+                            )
+                        ),
+                        'Skills Completed Per Day'
+                    ) / vResponsesCounter,
+                    Sum(
+                        FirstN(
+                            col_LMResponsesDateFilteredWithID,
+                            Value(
+                                LookUp(
+                                    col_LMResponsesDateFilteredWithID,
+                                    DateFiltered = vIncrementResponsesDate
+                                ).AutoNumAdd18
+                            )
+                        ),
+                        'Skills Completed Per Day'
+                    ) / 1
+                ),
+                DateFiltered: vIncrementResponsesDate
+            },
+            {
+                Value: vResponsesCounter,
+                'Skills Completed Per Day': If(
+                    !(vResponsesCounter = 0),
+                    Sum(
+                        FirstN(
+                            col_LMResponsesDateFilteredWithID,
+                            Value(
+                                LookUp(
+                                    col_LMResponsesDateFilteredWithID,
+                                    DateFiltered = vOldIncrementResponsesDate
+                                ).AutoNumAdd18
+                            )
+                        ),
+                        'Skills Completed Per Day'
+                    ) / vResponsesCounter,
+                    Sum(
+                        FirstN(
+                            col_LMResponsesDateFilteredWithID,
+                            Value(
+                                LookUp(
+                                    col_LMResponsesDateFilteredWithID,
+                                    DateFiltered = vOldIncrementResponsesDate
+                                ).AutoNumAdd18
+                            )
+                        ),
+                        'Skills Completed Per Day'
+                    ) / 1
+                ),
+                DateFiltered: vIncrementResponsesDate
+            }
+        )
+    )
+);
+If(
+    vResponsesCounter = vResponsesMaxLoop - 1,
+    //Collects the percent of skills completed from col_LMResponsesLoop and changes the column name.
+    ClearCollect(
+        col_LMResponsesProg,
+        col_LMResponsesLoop
+    );
+    //Removes the first record in col_LMResponsesProg which is always blank. 
+ClearCollect(
+        col_LMResponsesProg2,
+        Remove(
+            col_LMResponsesProg,
+            LookUp(
+                col_LMResponsesProg,
+                DateFiltered = "First Date"
+            )
+        )
+    );
+    //Clears data in col_LMResponsesLoop
+Clear(col_LMResponsesLoop);
+    //Checks to see if any skill completed columns are missing. If both columns have data, then the DyanmicRespXAxis toggle is turned on.
+If(
+        !IsBlank(col_LMResponsesProg2.'Skills Completed Per Day'),
+        If(
+            !IsBlank(col_LMDatesProg2.'Skills Completed Per Day'),
+            If(
+                vNavigate = false,
+                //The max limit a loop can repeat is determine by how many rows are in the collection col_IncrementDates.
+                Set(
+                    vAxisRespMaxLoop,
+                    CountRows(col_LMResponsesIncrementDates)
+                );
+                //Variables and counters used to loop through the records in IncrementDates Toggle. Increments by 1. 
+Set(
+                    vAxisRespCounter,
+                    0
+                );
+                If(
+                    CountRows(col_IncrementDates) >= 12,
+                    //vRespCountBy is the variable used to increment dynamically. Caclulates the amount it increments by dividing the number of rows in col_IncrementDates by 10. 
+                    Set(
+                        vRespCountBy,
+                        RoundUp(
+                            CountRows(col_IncrementDates) / 10,
+                            0
+                        )
+                    );
+                    Set(
+                        vAxisRespCounterAhead,
+                        vRespCountBy
+                    );
+                    Set(
+                        vAxisRespStartLoop,
+                        true
+                    ),
+                    Set(
+                        vAxisRespStartLoop,
+                        false
+                    );
+                    ClearCollect(
+                        col_AxisRespProg,
+                        col_LMResponsesProg2
+                    );
+                    Set(
+                        vLoading,
+                        false
+                    );
+                    /*Set(
+                        vTurnOn,
+                        true
+                    )*/
+                ),
+                Set(
+                    vAxisRespStartLoop,
+                    false
+                );
+                Clear(col_AxisProg);
+                Clear(col_AxisRespProg)
+            )
+        )
+    )
+),
+Set(
+    vResponsesStartLoop,
+    false
+);
+Clear(col_AxisProg);
+Clear(col_AxisRespProg);
+Clear(col_LMResponsesLoop)
+)
