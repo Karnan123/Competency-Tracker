@@ -1,0 +1,182 @@
+//AdminIncrementDate (OnCheck)
+//Turns off the IncrementDates toggle button.
+Set(
+vDateStartLoop,
+false
+);
+//Retrieves the last record added in col_LMDatesLoop2
+Set(
+oldDateProg,
+Last(col_LMDatesLoop2).&#39;Skills Completed Per Day&#39;
+);
+//This variable is a counter that increments by 1. It is intended to create a loop.
+Set(
+vDateCounter,
+vDateCounter + 1
+);
+//Stores dates that are present in both col_AdminPerformanceMerged and col_IncrementDates.
+Set(
+vCommonDate,
+LookUp(
+col_AdminPerformanceMerged,
+DateFiltered = Text(
+LookUp(
+col_IncrementDates,
+Value = vDateCounter
+).Date
+)
+)
+);
+
+//Stores the current date in the loop retrieved from the collection col_IncrementDates.
+Set(
+vIncrementDate,
+Text(
+LookUp(
+col_IncrementDates,
+Value = vDateCounter
+).Date
+)
+);
+//Adds one to vDateCounterAhead if it is equal to vDateCounter.
+If(
+vDateCounterAhead &lt; vDateMaxLoop,
+If(
+vDateCounter = vDateCounterAhead,
+Set(
+vDateCounterAhead,
+vDateCounterAhead + 1
+);
+)
+);
+//Continues to turn on the DyanmicXAxis toggle button if vDateCounterAhead is less than the max
+number.
+If(
+vDateCounterAhead &lt; vDateMaxLoop,
+If(
+vDateCounter &lt; vDateCounterAhead,
+If(
+vNavigate = false,
+
+Set(
+vDateStartLoop,
+true
+);
+,
+Set(
+vDateStartLoop,
+false
+);
+)
+)
+);
+//Performs the loop. If a date in col_IncrementDates yields a &quot;Skills Completed Per Day&quot; value from
+col_AdminPerformanceMerged then that record is added to the col_LMDatesLoop2. Else the last record
+in col_LMDatesLoops2 is added again to the col_LMDatesLoops2 with the col_IncrementDates date.
+ForAll(
+Sequence(1),
+Collect(
+col_LMDatesLoop2,
+If(
+!IsBlank(vCommonDate),
+{
+Value: vDateCounter,
+&#39;Skills Completed Per Day&#39;: vCommonDate.&#39;Skills Completed Per Day&#39;,
+DateFiltered: vIncrementDate
+},
+{
+Value: vDateCounter,
+&#39;Skills Completed Per Day&#39;: oldDateProg,
+
+DateFiltered: vIncrementDate
+}
+)
+)
+);
+If(
+vDateCounter = vDateMaxLoop - 1,
+//Collects the percent of skills completed from col_LMDatesLoop2 and changes the column name.
+ClearCollect(
+col_LMDatesProg,
+col_LMDatesLoop2
+);
+//Removes the first record in col_LMDatesProg which is always blank.
+ClearCollect(
+col_LMDatesProg2,
+Remove(
+col_LMDatesProg,
+LookUp(
+col_LMDatesProg,
+DateFiltered = &quot;First Date&quot;
+)
+)
+);
+//Clears data in col_LMDatesLoop2
+Clear(col_LMDatesLoop2);
+//Checks to see if any skill completed columns are missing. If both columns have data, then the
+DyanmicXAxis toggle is turned on.
+If(
+!IsBlank(col_LMDatesProg2.DateFiltered),
+
+If(
+!IsBlank(col_LMDatesProg2.&#39;Skills Completed Per Day&#39;),
+If(
+vNavigate = false,
+//The max limit a loop can repeat is determine by how many rows are in the collection
+col_IncrementDates.
+Set(
+vAxisMaxLoop,
+CountRows(col_IncrementDates)
+);
+//Below are variables and counters used to loop through the records in IncrementDates Toggle.
+Increments by 1.
+Set(
+vAxisCounter,
+0
+);
+//This if statement will decide how much the dates on the x-axis should increment by.
+If(
+CountRows(col_IncrementDates) &gt;= 12,
+//vCountBy is the variable used to increment dynamically. Caclulates the amount it
+increments by dividing the number of rows in col_IncrementDates by 10.
+Set(
+vCountBy,
+RoundUp(
+CountRows(col_IncrementDates) / 10,
+0
+)
+);
+Set(
+vAxisCounterAhead,
+
+vCountBy
+);
+Set(
+vAxisStartLoop,
+true
+),
+Set(
+vAxisStartLoop,
+false
+);
+ClearCollect(col_AxisProg,
+col_LMDatesProg2
+);
+Set(
+vLoading,
+false
+);
+Set(
+vTurnOn,
+true
+)
+),
+Set(
+vAxisStartLoop,
+false
+)
+)
+)
+)
+
+)
