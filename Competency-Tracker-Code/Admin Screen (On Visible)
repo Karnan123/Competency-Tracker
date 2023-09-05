@@ -1,0 +1,3 @@
+//Admin (On visible)
+//Turns on and off the Navigate delay.
+Set(vTimeDelay, false)
