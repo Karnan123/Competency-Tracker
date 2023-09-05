@@ -1,0 +1,112 @@
+//AdminDynamicXAxis (OnCheck)
+//Variable is used to turn on or off performance line graph.
+Set(
+vTurnOn,
+false
+);
+//Turns off the DyanmicXAxis toggle button.
+Set(
+vAxisStartLoop,
+false
+);
+//Retrieves the last record added in col_AxisLoop.
+Set(
+oldAxisProg,
+Last(col_AxisLoop).&#39;Skills Completed Per Day&#39;
+);
+//This variable is a counter that increments by a dyanmic amount. It is intended to create a loop.
+Set(
+vAxisCounter,
+vAxisCounter + vCountBy
+);
+//Adds one to vAxisCounterAhead if it is equal to vAxisCounter.
+If(
+
+vAxisCounterAhead &lt; vAxisMaxLoop,
+If(
+vAxisCounter = vAxisCounterAhead,
+Set(
+vAxisCounterAhead,
+vAxisCounterAhead + vCountBy
+)
+)
+);
+//Continues to turn on the toggle button if vAxisCounterAhead is less than the max number.
+If(
+vAxisCounterAhead &lt; vAxisMaxLoop,
+If(
+vAxisCounter &lt; vAxisCounterAhead,
+If(
+vNavigate = false,
+Set(
+vAxisStartLoop,
+true
+),
+Set(
+vAxisStartLoop,
+false
+)
+)
+)
+);
+//Performs the loop. Continues to add a record from col_LMDatesProg2 by looking for a certain Id which
+is determined by the incrementing value vAxisCounter.
+
+ForAll(
+Sequence(1),
+Collect(
+col_AxisLoop,
+{
+DateFiltered: LookUp(
+col_LMDatesProg2,
+Value = vAxisCounter
+).DateFiltered,
+&#39;Skills Completed Per Day&#39;: LookUp(
+col_LMDatesProg2,
+Value = vAxisCounter
+).&#39;Skills Completed Per Day&#39;,
+Value: LookUp(
+col_LMDatesProg2,
+Value = vAxisCounter
+).Value
+}
+)
+);
+If(
+(vAxisCounter = vAxisMaxLoop - vCountBy) || (vAxisCounter &gt; vAxisMaxLoop - vCountBy),
+//Collects the percent of skills completed from col_AxisLoop.
+ClearCollect(
+col_AxisProg,
+col_AxisLoop
+);
+ClearCollect(
+col_AxisProg2,
+
+RenameColumns(
+col_AxisProg,
+&quot;Skills Completed Per Day&quot;,
+&quot;Skills Completed (%)&quot;
+)
+);
+//Clears data in col_AxisLoop
+Clear(col_AxisLoop)
+);
+If(
+(vAxisCounter = vAxisMaxLoop - vCountBy) || (vAxisCounter &gt; vAxisMaxLoop - vCountBy),
+//Checks to see if any date or skill completed columns are missing. If both columns have data, then
+the performance graph is turned on and displays the data.
+If(
+!IsBlank(col_AxisProg2.DateFiltered),
+If(
+!IsBlank(col_AxisProg2.&#39;Skills Completed (%)&#39;),
+Set(
+vTurnOn,
+true
+);
+Set(
+vLoading,
+false
+)
+)
+)
+)
