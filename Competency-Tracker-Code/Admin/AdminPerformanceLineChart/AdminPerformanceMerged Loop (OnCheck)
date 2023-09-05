@@ -1,0 +1,214 @@
+//AdminPerformanceMerged (OnCheck)
+//Turns on the toggle button.
+Set(
+vStartLoop,
+false
+);
+//This variable is a counter that increments by 1. It is intended to create a loop.
+Set(
+vAdminInfoCounter,
+vAdminInfoCounter + 1
+);
+//Adds one to vAdminInfoCounterAhead if it is equal to vAdminInfoCounter.
+If(
+vAdminInfoCounterAhead &lt; vMaxLoop,
+If(
+vAdminInfoCounter = vAdminInfoCounterAhead,
+Set(
+vAdminInfoCounterAhead,
+vAdminInfoCounterAhead + 1
+);
+)
+);
+//Continues to turn on the toggle button if vAdminInfoCounterAhead is less than the max number.
+If(
+vAdminInfoCounterAhead &lt; vMaxLoop,
+If(
+vAdminInfoCounter &lt; vAdminInfoCounterAhead,
+
+If(
+vNavigate = false,
+Set(
+vStartLoop,
+true
+),
+Set(
+vStartLoop,
+false
+)
+)
+)
+);
+//Collects the approved records and adds the response levels of skills together that have the same date.
+ClearCollect(
+col_AdminLatestApprovedDateFiltered,
+DropColumns(
+AddColumns(
+GroupBy(
+ShowColumns(
+AddColumns(
+col_AdminLatestApprovedWithID,
+&quot;DateFiltered&quot;,
+Month(DateTime) &amp; &quot;/&quot; &amp; Day(DateTime) &amp; &quot;/&quot; &amp; Year(DateTime)
+),
+&quot;DateFiltered&quot;,
+&quot;ResponseLevel&quot;
+),
+&quot;DateFiltered&quot;,
+
+&quot;GroupDate&quot;
+),
+&quot;GroupLevelsByDate&quot;,
+Sum(
+GroupDate,
+ResponseLevel
+)
+),
+&quot;GroupDate&quot;
+)
+);
+//Performs the loop calculations. This collection continues to sum up the first &quot;x&quot; approved records (&quot;x&quot;
+changes by 1 every loop which increases the records that are summed) and then divides them by the
+total required levels possible to calculate the percent of skills completed.
+ForAll(
+Sequence(1),
+Collect(
+col_AdminPerformanceLoop,
+Round(
+(Sum(
+FirstN(
+col_AdminLatestApprovedDateFiltered,
+vAdminInfoCounter
+),
+GroupLevelsByDate
+) / (Sum(
+col_ServiceLine_Levels,
+LevelRequired
+) * Sum(CountRows(col_AdminApprovedAccounts)))) * 100,
+
+2
+)
+)
+);
+If(
+vAdminInfoCounter = vMaxLoop - 1,
+//Collects the percent of skills completed from col_AdminPerformanceLoop and changes the column
+name.
+ClearCollect(
+col_AdminPerformanceProg,
+RenameColumns(
+col_AdminPerformanceLoop,
+&quot;Value&quot;,
+&quot;Skills Completed Per Day&quot;
+)
+);
+Clear(col_AdminPerformanceLoop);
+//Adds an incrementing ID to each &quot;Skills Completed Per Day&quot; record.
+Clear(col_AdminPerformanceWithID);
+ForAll(
+col_AdminPerformanceProg,
+Collect(
+col_AdminPerformanceWithID,
+Last(
+FirstN(
+AddColumns(
+col_AdminPerformanceProg,
+&quot;AutoNumAdd2&quot;,
+CountRows(col_AdminPerformanceWithID) + 1
+
+),
+CountRows(col_AdminPerformanceWithID) + 1
+)
+)
+)
+);
+//Merges the &quot;Skills Completed Per Day&quot; records with the distinct dates collected in
+col_AdminLatestApprovedSortByDateWithID.
+Clear(col_AdminPerformanceMerged);
+ClearCollect(
+col_AdminPerformanceMerged,
+DropColumns(
+Ungroup(
+AddColumns(
+col_AdminPerformanceWithID As Response,
+&quot;tempResponseHolder&quot;,
+Filter(
+col_AdminLatestApprovedSortByDateWithID,
+Lower(AutoNumAdd9) = Lower(Response.AutoNumAdd2)
+)
+),
+&quot;tempResponseHolder&quot;
+),
+&quot;AutoNumAdd9&quot;
+)
+);
+
+);
+If(
+
+vAdminInfoCounter = vMaxLoop - 1,
+//Checks to see if any date or skill completed columns are missing. If data is present in both columns
+then the increment date toggle is turned on.
+If(
+!IsBlank(col_AdminPerformanceMerged.DateFiltered),
+If(
+!IsBlank(col_AdminPerformanceMerged.&#39;Skills Completed Per Day&#39;),
+//Creates a collection that increments by 1 day starting from the eariest date a approved
+response was submitted to today&#39;s date which is collected from col_AdminPerformanceMerged.
+ClearCollect (
+col_IncrementDates,
+With(
+{
+startDate: DateValue(First(col_AdminPerformanceMerged).DateFiltered),
+sequenceDays: Sequence(
+DateDiff(
+DateValue(First(col_AdminPerformanceMerged).DateFiltered),
+DateValue(Today())
+) + 1
+)
+},
+AddColumns(
+sequenceDays,
+&quot;Date&quot;,
+DateAdd(
+startDate,
+Value - 1,
+TimeUnit.Days
+),
+
+&quot;Skills Completed&quot;,
+Blank()
+)
+)
+);
+//The max limit a loop can repeat is determine by how many rows are in the collection
+col_IncrementDates which is added by 1.
+Set(
+vDateMaxLoop,
+CountRows(col_IncrementDates) + 1
+);
+//Variables and counters used to loop through the records in IncrementDates Toggle. Increments
+by 1.
+Set(
+vDateCounter,
+0
+);
+Set(
+vDateCounterAhead,
+1
+);
+If(
+vNavigate = false,
+Set(
+vDateStartLoop,
+true
+),
+Set(
+vDateStartLoop,
+
+false
+)
+)
+)
+)
+)
