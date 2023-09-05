@@ -1,0 +1,5 @@
+//LM Comment (Onvisible)
+//This variable is used to send a error message if the status submitted is pending.
+Set(vErrorFdBck, false);
+//Turns off timer.
+Set(vTimeDelay, false)
