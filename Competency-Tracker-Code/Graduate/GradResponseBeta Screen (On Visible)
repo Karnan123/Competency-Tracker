@@ -1,0 +1,137 @@
+//GradResponseBeta (On Visible)
+//Creates a new response form.
+NewForm(Form5_2);
+//Creates a new response Id
+Set(
+    vNewRespID1,
+    Concatenate(
+        Left(
+            vUserName,
+            3
+        ),
+        "-Ti-",
+        Text(
+            Now(),
+            "ddmmyy-hhmmss"
+        )
+    )
+);
+//Grabs today's date
+Set(
+    Date,
+    Today()
+);
+//Grabs today's date (month/day/year).
+Set(
+    vDate,
+    Text(
+        Now(),
+        "mm-dd-yy"
+    )
+);
+//Grabs the current hour.
+Set(
+    vHour,
+    Text(
+        Now(),
+        "hh"
+    )
+);
+//Grabs the current hour and minutes.
+Set(
+    vMin,
+    Text(
+        Now(),
+        "hh:mm"
+    )
+);
+//Turns off loading spinner.
+Set(
+    vLoadSpin,
+    false
+);
+//Turns off timer delay.
+Set(
+    vTimeDelay,
+    false
+);
+//These variables are used to display an error message if the Progress bar or Response Text is blank.
+Set(
+    vErrorGradResp1,
+    false
+);
+Set(
+    vErrorGradResp2,
+    false
+);
+//Reorders records by the most recent dates at the top of the collection table. 
+ClearCollect(
+    col_GradAllSkillsSortDate,
+    Sort(
+        col_GradAllSkills,
+        DateTime,
+        SortOrder.Descending
+    )
+);
+//Filters for Level Progress Approved skills. 
+ClearCollect(
+    col_GradLevProgApp,
+    Filter(
+        col_GradAllSkillsSortDate,
+        Status = "Level Progress Approved",
+        UserID = vID,
+        LevelID = vLevID
+    )
+);
+//Values used for overall progress dropdown. 
+ClearCollect(
+    col_ProgSelect,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    1.0
+);
+//Identifies most recent selected progress. 
+Set(
+    vCurrentProg,
+    If(
+        First(col_GradLevProgApp).PctComplete = 0.8,
+        2,
+        If(
+            First(col_GradLevProgApp).PctComplete = 0.9,
+            1,
+            (1 - First(col_GradLevProgApp).PctComplete) * 10 + 1
+        )
+    )
+);
+//Removes unwanted dropdown options and stores in collection. 
+ClearCollect(
+    col_ProgSelectUpdated,
+    LastN(
+        col_ProgSelect,
+        vCurrentProg
+    )
+);
+//Converts overall progress options to percentages.
+ClearCollect(
+    col_ProgSelectUpdated2,
+    ForAll(
+        col_ProgSelectUpdated,
+        Value * 100
+    )
+);
+//Adds "%" to progress dropdown options.
+ClearCollect(
+    col_ProgSelectUpdated3,
+    AddColumns(
+        col_ProgSelectUpdated2,
+        "Progress Selection",
+        Value & "%"
+    )
+);
