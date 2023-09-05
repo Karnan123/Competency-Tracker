@@ -1,0 +1,107 @@
+//LMDyamicXAxis (OnCheck)
+If(
+    vNavigate = false,
+//Variable is used to turn on or off performance line graph.
+Set(
+    vTurnOn,
+    false
+);
+//Turns on the toggle button.
+Set(
+    vAxisStartLoop,
+    false
+);
+//Variable is a loop counter. Increments by a dynamic amount.
+Set(
+    vAxisCounter,
+    vAxisCounter + vCountBy
+);
+//Adds vCountBy to vAxisCounterAhead if it is equal to vAxisCounter.
+If(
+    vAxisCounterAhead < vAxisMaxLoop,
+    If(
+        vAxisCounter = vAxisCounterAhead,
+        Set(
+            vAxisCounterAhead,
+            vAxisCounterAhead + vCountBy
+        )
+    )
+);
+//Continues to turn on the toggle button if vAxisCounterAhead is less than the max number.
+If(
+    vAxisCounterAhead < vAxisMaxLoop,
+    If(
+        vAxisCounter < vAxisCounterAhead,
+        If(
+            vNavigate = false,
+            Set(
+                vAxisStartLoop,
+                true
+            ),
+            Set(
+                vAxisStartLoop,
+                false
+            );
+            Clear(col_AxisProg);
+            Clear(col_AxisRespProg)
+        )
+    )
+);
+//Performs the loop. Continues to add a record from col_LMDatesProg2 by looking for a certain Id which is determined by the incrementing value vAxisCounter.
+ForAll(
+    Sequence(1),
+    Collect(
+        col_AxisLoop,
+        {
+            DateFiltered: LookUp(
+                col_LMDatesProg2,
+                Value = vAxisCounter
+            ).DateFiltered,
+            'Skills Completed Per Day': LookUp(
+                col_LMDatesProg2,
+                Value = vAxisCounter
+            ).'Skills Completed Per Day',
+            Value: LookUp(
+                col_LMDatesProg2,
+                Value = vAxisCounter
+            ).Value
+        }
+    )
+);
+If(
+    (vAxisCounter = vAxisMaxLoop - vCountBy) || (vAxisCounter > vAxisMaxLoop - vCountBy),
+    //Collects the percent of skills completed from col_AxisLoop and changes the column name.
+    ClearCollect(
+        col_AxisProg,
+        col_AxisLoop
+    );
+    //Clears data in col_AxisLoop
+Clear(col_AxisLoop)
+);
+If(
+    (vAxisCounter = vAxisMaxLoop - vCountBy) || (vAxisCounter > vAxisMaxLoop - vCountBy),
+    //Checks to see if any date or skill completed columns are missing. If both columns have data, then the performance graph is turned on and displays the data.
+    If(
+        !IsBlank(col_AxisProg.DateFiltered),
+        If(
+            !IsBlank(col_AxisProg.'Skills Completed Per Day'),
+            Set(
+                vTurnOn,
+                true
+            );
+            Set(
+                vLoading,
+                false
+            )
+        )
+    )
+),
+//Turns on the toggle button.
+Set(
+    vAxisStartLoop,
+    false
+);
+Clear(col_AxisProg);
+Clear(col_AxisRespProg);
+Clear(col_LMPerformanceLoop)
+)
