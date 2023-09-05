@@ -1,0 +1,250 @@
+//Collects microsoft account username.
+Set (
+    vUserName,
+    User().FullName
+);
+//Collects microsoft account email.
+Set (
+    vEmail,
+    Lower(User().Email)
+);
+//Collects microsoft account user image.
+Set (
+    vUserImage,
+    User().Image
+);
+//Collects all responses in sharepoint list gdp-can-responses.
+ClearCollect(
+    col_Responses,
+    ShowColumns(
+        'gdp-can-responses',
+        "Title",
+        "UserID",
+        "LevelID",
+        "DateTime",
+        "ResponseLevel",
+        "ResponseText",
+        "PctComplete",
+        "Status"
+    )
+);
+//Collects all user accounts in sharepoint list gdp-can-users.
+ClearCollect(
+    col_Users,
+    ShowColumns(
+        'gdp-can-users',
+        "Title",
+        "Name",
+        "LineManager",
+        "GDM",
+        "CCL",
+        "Email",
+        "Role",
+        "Division"
+    )
+);
+//Collects all levels in sharepoint list gdp-can-levels.
+ClearCollect(
+    col_Levels,
+    ShowColumns(
+        'gdp-can-levels',
+        "Title",
+        "SkillID",
+        "LevelRequired",
+        "ServiceLine"
+    )
+);
+//Collects the current user information.
+ClearCollect(
+    col_CurrentUser,
+    ShowColumns(
+        Filter(
+            'gdp-can-users',
+            Name = vUserName
+        ),
+        "Title",
+        "Name",
+        "LineManager",
+        "Division"
+    )
+);
+//Collects the categories in sharepoint list gdp-can-responses.
+ClearCollect(
+    col_Category,
+    ShowColumns(
+        'gdp-can-competencies',
+        "Category",
+        "ID"
+    )
+);
+//Collects the distinct categories.
+ClearCollect(
+    col_Category,
+    Distinct(
+        col_Category,
+        Category
+    ),
+    DropColumns(col_Category, "ID", "Category")
+);
+//Adds incrementing ID to the Category collection.
+Clear(col_CategoryWithID);
+ForAll(
+    col_Category,
+    Collect(
+        col_CategoryWithID,
+        Last(
+            FirstN(
+                AddColumns(
+                    col_Category,
+                    "Category ID",
+                    CountRows(col_CategoryWithID) + 1
+                ),
+                CountRows(col_CategoryWithID) + 1
+            )
+        )
+    )
+);
+//Collects the competencies records in sharepoint list gdp-can-competencies.
+ClearCollect(
+    col_Competency,
+    ShowColumns(
+        'gdp-can-competencies',
+        "Category",
+        "Competency",
+        "ID",
+        "Title"
+    )
+);
+//Collects the sub-competencies records in sharepoint list gdp-can-competencies.
+ClearCollect(
+    col_SubCompetency,
+    ShowColumns(
+        'gdp-can-competencies',
+        "Competency",
+        "Sub_x002d_Competency",
+        "Sub_x002d_CompetencyDescription",
+        "Title",
+        "ID"
+    )
+);
+//Sets variable to the division of current user.
+Set(
+    vUserDivision,
+    LookUp(
+        'gdp-can-users',
+        Name = vUserName,
+        Division
+    )
+);
+//Collects levels under current user's division.
+ClearCollect(
+    col_ServiceLine_Levels,
+    Filter(
+        col_Levels,
+        ServiceLine = vUserDivision
+    )
+);
+//Totals all possible levels that could be obtained in a certain division.
+Set(
+    vServiceLineLev,
+    Sum(
+        col_ServiceLine_Levels,
+        LevelRequired
+    )
+);
+//Sets variable to the Id of current user.
+Set(
+    vID,
+    LookUp(
+        col_CurrentUser,
+        Name = vUserName,
+        Title
+    )
+);
+//Collects all responses from col_Responses
+ClearCollect(
+    col_AllClaims,
+    ShowColumns(
+        col_Responses,
+        "DateTime",
+        "UserID",
+        "LevelID",
+        "PctComplete",
+        "Status",
+        "ResponseLevel"
+    )
+);
+//Merges response list with the col_levels list. 
+Clear(col_AllMergedResponses);
+ClearCollect(
+    col_AllMergedResponses,
+    DropColumns(
+        Ungroup(
+            AddColumns(
+                col_AllClaims As Response,
+                "tempResponseHolder",
+                Filter(
+                    col_Levels,
+                    Lower(Title) = Lower(Response.LevelID)
+                )
+            ),
+            "tempResponseHolder"
+        ),
+        "Title"
+    )
+);
+//Merges col_AllMergedResponses with the col_SubCompetency list. 
+ClearCollect(
+    col_AllMergedResponsesWithSubComp,
+    DropColumns(
+        Ungroup(
+            AddColumns(
+                col_AllMergedResponses As Response,
+                "tempResponseHolder2",
+                Filter(
+                    col_SubCompetency,
+                    Lower(Title) = Lower(Response.SkillID)
+                )
+            ),
+            "tempResponseHolder2"
+        ),
+        "Title",
+        "ID",
+        "Sub_x002d_CompetencyDescription"
+        //This used to drop column competency
+    )
+);
+//Divides each response level by the level required to calculate the progress in that skill.
+ClearCollect(
+    col_AllResponsesWithPctComp,
+    AddColumns(
+        col_AllMergedResponsesWithSubComp,
+        "Skills Completed",
+        (Round(
+            Value(ResponseLevel) / Value(LevelRequired),
+            2
+        )) * 100
+    )
+);
+//Collects all approved skills.
+ClearCollect(
+    col_AllApproved,
+    Filter(
+        col_AllResponsesWithPctComp,
+        Status = "Level Completed"
+    )
+);
+//Collects graduate accounts connected with the Line manager account.
+ClearCollect(
+    col_LMApprovedAccounts,
+    Filter(
+        col_Users,
+        LineManager = vEmail,
+        Title
+    )
+);
+//Counts Accounts
+Set(
+    vCountAccounts,
+    Sum(CountRows(col_LMApprovedAccounts))
+);
