@@ -1,0 +1,2 @@
+//Turns off loading screen when timer is turned on.
+Set(vTimeDelay, true);
