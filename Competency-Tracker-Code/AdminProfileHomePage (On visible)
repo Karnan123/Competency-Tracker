@@ -1,0 +1,430 @@
+//AdminProfileHomePage (On visible)
+//Identifies the role of the chosen account and collects all accounts assoicated with that name.
+ClearCollect(
+    col_AdminApprovedAccounts,
+    If(
+        LookUp(
+            col_Users,
+            Email = vAdminEmailFrUser,
+            Role.Value
+        ) = "Redacted",
+        Filter(
+            col_Users,
+            CCL = vAdminEmailFrUser
+        ),
+        If(
+            LookUp(
+                col_Users,
+                Email = vAdminEmailFrUser,
+                Role.Value
+            ) = "Redacted",
+            Filter(
+                col_Users,
+                GDM = vAdminEmailFrUser,
+                Title
+            ),
+            If(
+                LookUp(
+                    col_Users,
+                    Email = vAdminEmailFrUser,
+                    Role.Value
+                ) = "Line Manager",
+                Filter(
+                    col_Users,
+                    LineManager = vAdminEmailFrUser,
+                    Title
+                ),
+                If(
+                    vAdminCounter = 5,
+                    Filter(
+                        col_Users,
+                        Role.Value = "Graduate",
+                        Title
+                    ),
+                    Filter(
+                        col_Users,
+                        Email = vAdminEmailFrUser,
+                        Title
+                    )
+                )
+            )
+        )
+    )
+);
+//Collects all responses that have the same user Id as col_AdminApprovedAccounts. 
+ClearCollect(
+    col_AdminApproved,
+    Filter(
+        col_AllApproved,
+        Text(UserID) in col_AdminApprovedAccounts.Title
+    )
+);
+//Bug Fixed Code
+//Sorts responses in descending order.
+ClearCollect(
+    col_AdminApprovedSortDate,
+    Sort(
+        col_AdminApproved,
+        DateTime,
+        SortOrder.Descending
+    )
+);
+//Groups responses by user and levelID. Then it chooses the first response out of each group.
+ClearCollect(
+    col_AdminLatestApprovedTable,
+    DropColumns(
+        AddColumns(
+            GroupBy(
+                col_AdminApprovedSortDate,
+                "LevelID",
+                "UserID",
+                "RespByLevel"
+            ),
+            "FirstRecord",
+            First(RespByLevel)
+        ),
+        "RespByLevel"
+    )
+);
+//Coverts the col_AdminLatestApprovedTable group collection to a record list. 
+ClearCollect(
+    col_AdminLatestApproved,
+    DropColumns(
+        AddColumns(
+            col_AdminLatestApprovedTable,
+            "DateTime",
+            FirstRecord.DateTime,
+            "LevelRequired",
+            FirstRecord.LevelRequired,
+            "Skills Completed",
+            FirstRecord.'Skills Completed',
+            "PctComplete",
+            FirstRecord.PctComplete,
+            "ResponseLevel",
+            FirstRecord.ResponseLevel,
+            "ServiceLine",
+            FirstRecord.ServiceLine,
+            "SkillID",
+            FirstRecord.SkillID,
+            "Status",
+            FirstRecord.Status,
+            "Sub_x002d_Competency",
+            FirstRecord.Sub_x002d_Competency
+        ),
+        "FirstRecord"
+    )
+);
+//Adds incrementing ID to the Approved collection.
+Clear(col_AdminLatestApprovedWithID);
+ForAll(
+    col_AdminLatestApproved,
+    Collect(
+        col_AdminLatestApprovedWithID,
+        Last(
+            FirstN(
+                AddColumns(
+                    Sort(
+                        col_AdminLatestApproved,
+                        DateTime,
+                        SortOrder.Ascending
+                    ),
+                    "AutoNumAdd7",
+                    CountRows(col_AdminLatestApprovedWithID) + 1
+                ),
+                CountRows(col_AdminLatestApprovedWithID) + 1
+            )
+        )
+    )
+);
+//Collects all responses that have the same user Id as col_AdminApprovedAccounts. 
+ClearCollect(
+    col_AdminResponses,
+    Filter(
+        col_AllResponsesWithPctComp,
+        Text(UserID) in col_AdminApprovedAccounts.Title
+    )
+);
+//Collects most recent responses that has a distinct level.
+ClearCollect(
+    col_AdminResponsesDistinctSkillsTable,
+    DropColumns(
+        AddColumns(
+            GroupBy(
+                Sort(
+                    col_AdminResponses,
+                    DateTime,
+                    SortOrder.Descending
+                ),
+                "LevelID",
+                "RespByLevel"
+            ),
+            "FirstRecord",
+            First(RespByLevel)
+        ),
+        "RespByLevel"
+    )
+);
+//Coverts the col_AdminGradResponsesDistinctSkillsTable group collection to a record list.
+ClearCollect(
+    col_AdminResponsesDistinctSkills,
+    DropColumns(
+        AddColumns(
+            col_AdminResponsesDistinctSkillsTable,
+            "DateTime",
+            FirstRecord.DateTime,
+            "LevelRequired",
+            FirstRecord.LevelRequired,
+            "Skills Completed",
+            FirstRecord.'Skills Completed',
+            "PctComplete",
+            FirstRecord.PctComplete,
+            "ResponseLevel",
+            FirstRecord.ResponseLevel,
+            "ServiceLine",
+            FirstRecord.ServiceLine,
+            "SkillID",
+            FirstRecord.SkillID,
+            "Status",
+            FirstRecord.Status,
+            "Sub_x002d_Competency",
+            FirstRecord.Sub_x002d_Competency
+        ),
+        "FirstRecord"
+    )
+);
+//Calulates the overall progress of the approved accounts in various stages.
+Set(
+    vAdminSkillProgress,
+    Round(
+        Sum(
+            col_AdminLatestApprovedWithID,
+            ResponseLevel
+        ),
+        2
+    )
+);
+Set(
+    vAdminSkillProgressPend,
+    Round(
+        Sum(
+            Filter(
+                col_AdminResponsesDistinctSkills,
+                Status = "Pending"
+            ),
+            ResponseLevel
+        ),
+        2
+    )
+);
+Set(
+    vAdminSkillProgressLevProgApp,
+    Round(
+        Sum(
+            Filter(
+                col_AdminResponsesDistinctSkills,
+                Status = "Level Progress Approved"
+            ),
+            ResponseLevel
+        ),
+        2
+    )
+);
+Set(
+    vAdminSkillProgressDeclined,
+    Round(
+        Sum(
+            Filter(
+                col_AdminResponsesDistinctSkills,
+                Status = "Declined"
+            ),
+            ResponseLevel
+        ),
+        2
+    )
+);
+//Calulates the overall progress of the approved accounts in various stages by percentage.
+Set(
+    vAdminCompProgress,
+    Round(
+        (Sum(
+            col_AdminLatestApprovedWithID,
+            ResponseLevel
+        ) / (Sum(
+            col_ServiceLine_Levels,
+            LevelRequired
+        ) * CountRows(col_AdminApprovedAccounts))) * 100,
+        2
+    )
+);
+Set(
+    vAdminCompProgressPend,
+    Round(
+        (Sum(
+            Filter(
+                col_AdminResponsesDistinctSkills,
+                Status = "Pending"
+            ),
+            ResponseLevel
+        ) / (Sum(
+            col_ServiceLine_Levels,
+            LevelRequired
+        ))) * 100,
+        2
+    )
+);
+Set(
+    vAdminCompProgressLevProgApp,
+    Round(
+        (Sum(
+            Filter(
+                col_AdminResponsesDistinctSkills,
+                Status = "Level Progress Approved"
+            ),
+            ResponseLevel
+        ) / (Sum(
+            col_ServiceLine_Levels,
+            LevelRequired
+        ))) * 100,
+        2
+    )
+);
+Set(
+    vAdminCompProgressDeclined,
+    Round(
+        (Sum(
+            Filter(
+                col_AdminResponsesDistinctSkills,
+                Status = "Declined"
+            ),
+            ResponseLevel
+        ) / (Sum(
+            col_ServiceLine_Levels,
+            LevelRequired
+        ))) * 100,
+        2
+    )
+);
+//Visual progression numbers for Gradaute Progress Pie chart.
+ClearCollect(
+    col_AdminCompProgress,
+    {
+        Name: "Pending Skills",
+        NamePercent: "Pending Skills (" & vAdminSkillProgressPend & ")",
+        Value: vAdminCompProgressPend & "%"
+    },
+    {
+        Name: "Declined Skills",
+        NamePercent: "Declined Skills (" & vAdminSkillProgressDeclined & ")",
+        Value: vAdminCompProgressDeclined & "%"
+    },
+    {
+        Name: "Level Progress Approved Skills",
+        NamePercent: "Level Progress Approved Skills (" & vAdminSkillProgressLevProgApp & ")",
+        Value: vAdminCompProgressLevProgApp & "%"
+    },
+    {
+        Name: "Completed Skills",
+        NamePercent: "Completed Skills (" & vAdminSkillProgress & ")",
+        Value: vAdminCompProgress & "%"
+    },
+    {
+        Name: "Not Started",
+        NamePercent: "Not Started (" & vServiceLineLev - vAdminSkillProgress - vAdminSkillProgressPend - vAdminSkillProgressDeclined - vAdminSkillProgressLevProgApp & ")",
+        Value: 100 - vAdminCompProgress - vAdminCompProgressPend - vAdminCompProgressDeclined - vAdminCompProgressLevProgApp & "%"
+    }
+);
+//Grabs the distinct dates from the collection col_AdminLatestApprovedWithID. 
+ClearCollect(
+    col_AdminLatestApprovedSortByDate,
+    RenameColumns(
+        Distinct(
+            AddColumns(
+                col_AdminLatestApprovedWithID,
+                "DateFiltered",
+                Month(DateTime) & "/" & Day(DateTime) & "/" & Year(DateTime)
+            ),
+            DateFiltered
+        ),
+        "Value",
+        "DateFiltered"
+    )
+);
+//Adds incrementing ID to the Approved collection.
+Clear(col_AdminLatestApprovedSortByDateWithID);
+ForAll(
+    col_AdminLatestApprovedSortByDate,
+    Collect(
+        col_AdminLatestApprovedSortByDateWithID,
+        Last(
+            FirstN(
+                AddColumns(
+                    col_AdminLatestApprovedSortByDate,
+                    "AutoNumAdd9",
+                    CountRows(col_AdminLatestApprovedSortByDateWithID) + 1
+                ),
+                CountRows(col_AdminLatestApprovedSortByDateWithID) + 1
+            )
+        )
+    )
+);
+If(
+    !(First(col_AdminCompProgress).Value = "0%"),
+    //The max limit a loop can repeat is determine by how many rows are in the collection col_AdminLatestApprovedSortByDate which is added by 1.
+    Set(
+        vMaxLoop,
+        CountRows(col_AdminLatestApprovedSortByDate) + 1
+    );
+    //Variables and counters used to loop through the records. Increments by 1. 
+Set(
+        vAdminInfoCounter,
+        0
+    );
+    Set(
+        vAdminInfoCounterAhead,
+        1
+    );
+    Set(
+        vStartLoop,
+        true
+    );
+    ,
+    Clear(col_AdminPerformanceProg)
+);
+//Turns on and off the Navigate delay.
+Set(
+    vTimeDelay,
+    false
+);
+//Creates a collection with default columns that will be used in IncrementDates Toggle.
+ClearCollect(
+    col_LMDatesLoop2,
+    {
+        Value: Blank(),
+        'Skills Completed Per Day': Blank(),
+        DateFiltered: "First Date"
+    }
+);
+//Checks if NextArrow in graduate gallery list is clicked on. Default value is set to false.
+Set(
+    vNavigate,
+    false
+);
+//Turns on the loading text label.
+If(
+    CountRows(col_AdminLatestApproved) > 0,
+    Set(
+        vLoading,
+        true
+    )
+);
+//Turns off performance line chart.
+Set(
+    vTurnOn,
+    false
+);
+//Turns on loading screen delay
+Set(
+    vTimeDelay2,
+    true
+);
+
