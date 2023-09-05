@@ -1,0 +1,555 @@
+//LMBeta (OnVisible)
+//Turns off the bar chart
+Set(
+    vTurnOnBar,
+    false
+);
+//Counts how many graduates the line manager supervises.
+Set(
+    vCountUsers,
+    CountRows(
+        Filter(
+            col_Users,
+            LineManager = vEmail
+        )
+    )
+);
+//Colles all responses from sharepoint list gdp-can-responses.
+ClearCollect(
+    col_Responses,
+    ShowColumns(
+        'gdp-can-responses',
+        "Title",
+        "UserID",
+        "LevelID",
+        "DateTime",
+        "ResponseLevel",
+        "ResponseText",
+        "PctComplete",
+        "Status"
+    )
+);
+//From OnStart
+//Collects all responses from col_Responses
+ClearCollect(
+    col_AllClaims,
+    ShowColumns(
+        col_Responses,
+        "DateTime",
+        "UserID",
+        "LevelID",
+        "PctComplete",
+        "Status",
+        "ResponseLevel"
+    )
+);
+//Merges response list with the col_levels list. 
+Clear(col_AllMergedResponses);
+ClearCollect(
+    col_AllMergedResponses,
+    DropColumns(
+        Ungroup(
+            AddColumns(
+                col_AllClaims As Response,
+                "tempResponseHolder",
+                Filter(
+                    col_Levels,
+                    Lower(Title) = Lower(Response.LevelID)
+                )
+            ),
+            "tempResponseHolder"
+        ),
+        "Title"
+    )
+);
+//Merges col_AllMergedResponses with the col_SubCompetency list. 
+ClearCollect(
+    col_AllMergedResponsesWithSubComp,
+    DropColumns(
+        Ungroup(
+            AddColumns(
+                col_AllMergedResponses As Response,
+                "tempResponseHolder2",
+                Filter(
+                    col_SubCompetency,
+                    Lower(Title) = Lower(Response.SkillID)
+                )
+            ),
+            "tempResponseHolder2"
+        ),
+        "Title",
+        "ID",
+        "Sub_x002d_CompetencyDescription"
+        //Used to drop "Competency"
+    )
+);
+//Divides each response level by the level required to calculate the progress in that skill.
+If(
+    !IsBlank(col_AllMergedResponsesWithSubComp.LevelRequired),
+    ClearCollect(
+        col_AllResponsesWithPctComp,
+        AddColumns(
+            col_AllMergedResponsesWithSubComp,
+            "Skills Completed",
+            If(
+                !(Value(LevelRequired) = 0),
+                (Round(
+                    Value(ResponseLevel) / Value(LevelRequired),
+                    2
+                )) * 100,
+                (Round(
+                    Value(ResponseLevel) / 1,
+                    2
+                )) * 100
+            )
+        )
+    )
+);
+//From OnStart
+//Collects graduate accounts connected with the Line manager account.
+ClearCollect(
+    col_LMApprovedAccounts,
+    Filter(
+        col_Users,
+        LineManager = vEmail,
+        Title
+    )
+);
+//Collects graduates' approved responses by using the approved accounts' Id and Status.
+ClearCollect(
+    col_LMApproved,
+    Filter(
+        col_AllResponsesWithPctComp,
+        Text(UserID) in col_LMApprovedAccounts.Title,
+        Status = "Level Completed"
+    )
+);
+//Bug Fixed Code
+//Sorts responses in descending order.
+ClearCollect(
+    col_LMApprovedSortDate,
+    Sort(
+        col_LMApproved,
+        DateTime,
+        SortOrder.Descending
+    )
+);
+//Groups responses by user and levelID. Then it chooses the first response out of each group.
+ClearCollect(
+    col_LMLatestApprovedTable,
+    DropColumns(
+        AddColumns(
+            GroupBy(
+                col_LMApprovedSortDate,
+                "LevelID",
+                "UserID",
+                "RespByLevel"
+            ),
+            "FirstRecord",
+            First(RespByLevel)
+        ),
+        "RespByLevel"
+    )
+);
+//Coverts the col_LMLatestApprovedTable group collection to a record list.
+ClearCollect(
+    col_LMLatestApproved,
+    DropColumns(
+        AddColumns(
+            col_LMLatestApprovedTable,
+            "DateTime",
+            FirstRecord.DateTime,
+            "LevelRequired",
+            FirstRecord.LevelRequired,
+            "Skills Completed",
+            FirstRecord.'Skills Completed',
+            "PctComplete",
+            FirstRecord.PctComplete,
+            "ResponseLevel",
+            FirstRecord.ResponseLevel,
+            "ServiceLine",
+            FirstRecord.ServiceLine,
+            "SkillID",
+            FirstRecord.SkillID,
+            "Status",
+            FirstRecord.Status,
+            "Sub_x002d_Competency",
+            FirstRecord.Sub_x002d_Competency,
+            "Competency",
+            FirstRecord.Competency
+        ),
+        "FirstRecord"
+    )
+);
+//Bug Fixed Code
+//Performance Line Graph Loop Code
+//Adds incrementing ID to the Approved collection.
+Clear(col_LMLatestApprovedWithID);
+ForAll(
+    col_LMLatestApproved,
+    Collect(
+        col_LMLatestApprovedWithID,
+        Last(
+            FirstN(
+                AddColumns(
+                    Sort(
+                        col_LMLatestApproved,
+                        DateTime,
+                        SortOrder.Ascending
+                    ),
+                    "AutoNumAdd11",
+                    CountRows(col_LMLatestApprovedWithID) + 1
+                ),
+                CountRows(col_LMLatestApprovedWithID) + 1
+            )
+        )
+    )
+);
+//Grabs the distinct dates from the collection col_LMLatestApprovedWithID. 
+ClearCollect(
+    col_LMLatestApprovedSortByDate,
+    RenameColumns(
+        Distinct(
+            AddColumns(
+                col_LMLatestApprovedWithID,
+                "DateFiltered",
+                Month(DateTime) & "/" & Day(DateTime) & "/" & Year(DateTime)
+            ),
+            DateFiltered
+        ),
+        "Value",
+        "DateFiltered"
+    )
+);
+//Adds incrementing ID to the Approved collection.
+Clear(col_LMLatestApprovedSortByDateWithID);
+ForAll(
+    col_LMLatestApprovedSortByDate,
+    Collect(
+        col_LMLatestApprovedSortByDateWithID,
+        Last(
+            FirstN(
+                AddColumns(
+                    col_LMLatestApprovedSortByDate,
+                    "AutoNumAdd10",
+                    CountRows(col_LMLatestApprovedSortByDateWithID) + 1
+                ),
+                CountRows(col_LMLatestApprovedSortByDateWithID) + 1
+            )
+        )
+    )
+);
+//Variables and counters used to loop through the records. Increments by 1. 
+Set(
+    vMaxLoop,
+    CountRows(col_LMLatestApprovedSortByDate) + 1
+);
+Set(
+    vAdminInfoCounter,
+    0
+);
+Set(
+    vAdminInfoCounterAhead,
+    1
+);
+Set(
+    vStartLoop,
+    true
+);
+//Collects all records under line manager
+ClearCollect(
+    col_LMResponses,
+    Filter(
+        col_AllResponsesWithPctComp,
+        Text(UserID) in col_LMApprovedAccounts.Title
+    )
+);
+//Removes the hours in the col_LMResponses date column. Counts how many records have the same date. Then groups records together if they have the same date. 
+ClearCollect(
+    col_LMResponsesDateFiltered,
+    AddColumns(
+        GroupBy(
+            AddColumns(
+                col_LMResponses,
+                "DateFiltered",
+                Month(DateTime) & "/" & Day(DateTime) & "/" & Year(DateTime)
+            ),
+            "DateFiltered",
+            "GroupDate"
+        ),
+        "Skills Completed Per Day",
+        CountRows(GroupDate)
+    )
+);
+//Adds incrementing ID to col_LMResponsesDateFiltered.
+Clear(col_LMResponsesDateFilteredWithID);
+ForAll(
+    col_LMResponsesDateFiltered,
+    Collect(
+        col_LMResponsesDateFilteredWithID,
+        Last(
+            FirstN(
+                AddColumns(
+                    col_LMResponsesDateFiltered,
+                    "AutoNumAdd18",
+                    CountRows(col_LMResponsesDateFilteredWithID) + 1
+                ),
+                CountRows(col_LMResponsesDateFilteredWithID) + 1
+            )
+        )
+    )
+);
+//Turns on and off the Navigate delay.
+Set(
+    vTimeDelay,
+    false
+);
+//For Skills Completed bar chart.
+//Creates a new collection without the title column from col_ServiceLine_Levels.
+ClearCollect(
+    col_ServiceLineDropTitle,
+    DropColumns(
+        col_ServiceLine_Levels,
+        "Title"
+    )
+);
+//Merges col_ServiceLineDropTitle with the col_SubCompetency list. 
+ClearCollect(
+    col_AllMergedCompAndServiceLine,
+    DropColumns(
+        Ungroup(
+            AddColumns(
+                col_ServiceLineDropTitle As Response,
+                "tempMergedCompAndServiceLine",
+                Filter(
+                    col_SubCompetency,
+                    Lower(Title) = Lower(Response.SkillID)
+                )
+            ),
+            "tempMergedCompAndServiceLine"
+        ),
+        "Title",
+        "ID",
+        "Sub_x002d_CompetencyDescription"
+    )
+);
+//Groups the sub-competency collection by the competency they are linked too. Within those groups the levels required for each sub-competency skill is summed up together and added as a new column. 
+ClearCollect(
+    col_AllGroupLevReq,
+    RenameColumns(
+        AddColumns(
+            GroupBy(
+                col_AllMergedCompAndServiceLine,
+                "Competency",
+                "GroupByCompetency"
+            ),
+            "LevReqPerComp",
+            Sum(
+                GroupByCompetency,
+                LevelRequired
+            )*vCountUsers
+        ),
+        "Competency",
+        "CompLevReq"
+    )
+);
+//Groups the most recent approved responses by the competency they are linked too. Within those groups the response level for each sub-competency skill is summed up together and added as a new column. 
+ClearCollect(
+    col_LMGroupRespLev,
+    DropColumns(
+        AddColumns(
+            GroupBy(
+                col_LMLatestApproved,
+                "Competency",
+                "GroupByCompetency"
+            ),
+            "RespLevPerComp",
+            Sum(
+                GroupByCompetency,
+                ResponseLevel
+            )
+        ),
+        "GroupByCompetency"
+    )
+);
+//Merges col_LMGroupRespLev with the col_AllGroupLevReq list. 
+ClearCollect(
+    col_LMMergedRespLevWithLevReq,
+    DropColumns(
+        Ungroup(
+            AddColumns(
+                col_LMGroupRespLev As Response,
+                "tempMergeRespLevWithLevReq",
+                Filter(
+                    col_AllGroupLevReq,
+                    Lower(CompLevReq) = Lower(Response.Competency)
+                )
+            ),
+            "tempMergeRespLevWithLevReq"
+        ),
+        "CompLevReq"
+    )
+);
+//Divides the summed response levels by the total levels required to calculate the progress in each competency.
+If(
+    !IsBlank(col_LMMergedRespLevWithLevReq.LevReqPerComp),
+    If(
+        !IsBlank(col_LMMergedRespLevWithLevReq.RespLevPerComp),
+        ClearCollect(
+            col_LMResponsesWithPctSkillsCompleted,
+            AddColumns(
+                col_LMMergedRespLevWithLevReq,
+                "Skills Completed",
+                If(
+                    !(Value(LevReqPerComp) = 0),
+                    (Round(
+                        Value(RespLevPerComp) / Value(LevReqPerComp),
+                        2
+                    )) * 100,
+                    (Round(
+                        Value(RespLevPerComp) / 1,
+                        2
+                    )) * 100
+                )
+            )
+        );
+        //Collects all distinct names in competencies.
+        ClearCollect(
+            col_LMDistinctComp,
+            SortByColumns(
+                Distinct(
+                    col_Competency,
+                    Competency
+                ),
+                "Value",
+                SortOrder.Ascending
+            )
+        );
+        
+        //Merges Skills Completed in each competency with the list of all possible competency categories. 
+        Clear(col_LMMainSkillsCompleted);
+        ClearCollect(
+            col_LMMainSkillsCompleted,
+            RenameColumns(
+                DropColumns(
+                    Ungroup(
+                        AddColumns(
+                            col_LMDistinctComp As Response,
+                            "tempResponseHolder",
+                            Filter(
+                                col_LMResponsesWithPctSkillsCompleted,
+                                Lower(Competency) = Lower(Response.Value)
+                            )
+                        ),
+                        "tempResponseHolder"
+                    ),
+                    "Competency"
+                ),
+                "Value",
+                "Competency"
+            )
+        );
+        Set(
+            vTurnOnBar,
+            true
+        ),
+        Set(
+            vTurnOnBar,
+            false
+        )
+    )
+);
+//Creates a collection with default columns that will be used in IncrementDates Toggle.
+ClearCollect(
+    col_LMDatesLoop2,
+    {
+        Value: Blank(),
+        'Skills Completed Per Day': Blank(),
+        DateFiltered: "First Date"
+    }
+);
+//Creates a collection that increments by 1 day starting from the eariest date to today's date which is collected from col_LMResponsesDateFiltered.
+ClearCollect (
+    col_LMResponsesIncrementDates,
+    With(
+        {
+            /*startDate: DateValue(First(col_LMResponsesDateFiltered).DateFiltered),
+            sequenceDays: Sequence(
+                DateDiff(
+                    DateValue(First(col_LMResponsesDateFiltered).DateFiltered),
+                    DateValue(Today())
+                ) + 1
+            )*/
+            startDate: DateValue(First(col_LMResponsesDateFiltered).DateFiltered),
+            sequenceDays: If(
+                IsError(
+                    Sequence(
+                        DateDiff(
+                            DateValue(First(col_LMResponsesDateFiltered).DateFiltered),
+                            DateValue(Today())
+                        ) + 1
+                    )
+                ),
+                Sequence(0),
+                Sequence(
+                    DateDiff(
+                        DateValue(First(col_LMResponsesDateFiltered).DateFiltered),
+                        DateValue(Today())
+                    ) + 1
+                )
+            )
+        },
+        AddColumns(
+            sequenceDays,
+            "Date",
+            DateAdd(
+                startDate,
+                Value - 1,
+                TimeUnit.Days
+            ),
+            "Skills Completed",
+            Blank()
+        )
+    )
+);
+//Variables and counters used to loop through the records in IncrementRespDates Toggle. Increments by 1. 
+Set(
+    vResponsesMaxLoop,
+    CountRows(col_LMResponsesIncrementDates) + 1
+);
+Set(
+    vResponsesCounter,
+    0
+);
+Set(
+    vResponsesCounterAhead,
+    1
+);
+Set(
+    vResponsesStartLoop,
+    true
+);
+//Creates a collection with default columns that will be used in IncrementRespDates Toggle.
+ClearCollect(
+    col_LMResponsesLoop,
+    {
+        Value: Blank(),
+        'Skills Completed Per Day': Blank(),
+        DateFiltered: "First Date"
+    }
+);
+//Checks if NextArrow in graduate gallery list is clicked on. Default value is set to false.
+Set(
+    vNavigate,
+    false
+);
+//Turns on the loading text label.
+Set(
+    vLoading,
+    true
+);
+//Variable turns off performance line chart.
+Set(
+    vTurnOn,
+    false
+);
