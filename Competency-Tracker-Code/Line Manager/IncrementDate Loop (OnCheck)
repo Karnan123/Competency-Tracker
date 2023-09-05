@@ -1,0 +1,181 @@
+If(
+    vNavigate = false,
+//Turns on the toggle button.
+Set(
+    vDateStartLoop,
+    false
+);
+//Retrieves the last record added in col_LMDatesLoop2
+Set(
+    oldDateProg,
+    Last(col_LMDatesLoop2).'Skills Completed Per Day'
+);
+//Variable is a loop counter. Increments by 1.
+Set(
+    vDateCounter,
+    vDateCounter + 1
+);
+//Stores dates that are present in both col_LMPerformanceMerged and col_IncrementDates.
+Set(
+    vCommonDate,
+    LookUp(
+        col_LMPerformanceMerged,
+        DateFiltered = Text(
+            LookUp(
+                col_IncrementDates,
+                Value = vDateCounter
+            ).Date
+        )
+    )
+);
+//Stores the current date retrieved from the collection col_IncrementDates.
+Set(
+    vIncrementDate,
+    Text(
+        LookUp(
+            col_IncrementDates,
+            Value = vDateCounter
+        ).Date
+    )
+);
+//Adds one to vDateCounterAhead if it is equal to vDateCounter.
+If(
+    vDateCounterAhead < vDateMaxLoop,
+    If(
+        vDateCounter = vDateCounterAhead,
+        Set(
+            vDateCounterAhead,
+            vDateCounterAhead + 1
+        );
+    )
+);
+//Continues to turn on the IncrementDates toggle if vDateCounterAhead is less than the max number.
+If(
+    vDateCounterAhead < vDateMaxLoop,
+    If(
+        vDateCounter < vDateCounterAhead,
+        If(
+            vNavigate = false,
+            Set(
+                vDateStartLoop,
+                true
+            );
+            ,
+            Set(
+                vDateStartLoop,
+                false
+            );
+            Clear(col_AxisProg);
+            Clear(col_AxisRespProg)
+        )
+    )
+);
+//Performs the loop. If a date in col_IncrementDates yields a "Skills Completed Per Day" value from col_LMPerformanceMerged then that record is added to the col_LMDatesLoop2. Else the last record in col_LMDatesLoops2 is added again to the col_LMDatesLoops2 with the col_IncrementDates date. 
+ForAll(
+    Sequence(1),
+    Collect(
+        col_LMDatesLoop2,
+        If(
+            !IsBlank(vCommonDate),
+            {
+                Value: vDateCounter,
+                'Skills Completed Per Day': vCommonDate.'Skills Completed Per Day',
+                DateFiltered: vIncrementDate
+            },
+            {
+                Value: vDateCounter,
+                'Skills Completed Per Day': oldDateProg,
+                DateFiltered: vIncrementDate
+            }
+        )
+    )
+);
+If(
+    vDateCounter = vDateMaxLoop - 1,
+    //Collects the percent of skills completed from col_LMDatesLoop2.
+    ClearCollect(
+        col_LMDatesProg,
+        col_LMDatesLoop2
+    );
+    //Removes the first record in col_LMDatesProg which is always blank. 
+    ClearCollect(
+        col_LMDatesProg2,
+        Remove(
+            col_LMDatesProg,
+            LookUp(
+                col_LMDatesProg,
+                DateFiltered = "First Date"
+            )
+        )
+    );
+    //Clears data in col_LMDatesLoop2
+    Clear(col_LMDatesLoop2);
+    If(
+        //Checks to see if any skill completed columns are missing. If both columns have data, then the DynamicPerformXAxis is toggled on and displays the data.
+        !IsBlank(col_LMDatesProg2.'Skills Completed Per Day'),
+        If(
+            !IsBlank(col_LMResponsesProg2.'Skills Completed Per Day'),
+            If(
+                vNavigate = false,
+                //The max limit a loop can repeat is determine by how many rows are in the collection col_IncrementDates.
+                Set(
+                    vAxisMaxLoop,
+                    CountRows(col_IncrementDates)
+                );
+                //Variables and counters used to loop through the records in IncrementDates Toggle. Increments by 1. 
+                Set(
+                    vAxisCounter,
+                    0
+                );
+                If(
+                    CountRows(col_IncrementDates) >= 12,
+                    //vCountBy is the variable used to increment dynamically. Caclulates the amount it increments by dividing the number of rows in col_IncrementDates by 10. 
+                    Set(
+                        vCountBy,
+                        RoundUp(
+                            CountRows(col_IncrementDates) / 10,
+                            0
+                        )
+                    );
+                    Set(
+                        vAxisCounterAhead,
+                        vCountBy
+                    );
+                    Set(
+                        vAxisStartLoop,
+                        true
+                    ),
+                    Set(
+                        vAxisStartLoop,
+                        false
+                    );
+                    ClearCollect(col_AxisProg, 
+                        col_LMDatesProg2
+                    );
+                    Set(
+                        vLoading,
+                        false
+                    );
+                    /*Set(
+                        vTurnOn,
+                        true
+                    )*/
+                ),
+                Set(
+                    vAxisStartLoop,
+                    false
+                );
+                Clear(col_AxisProg);
+                Clear(col_AxisRespProg)
+            )
+        )
+    )
+),
+Set(
+    vDateStartLoop,
+    false
+);
+Clear(col_AxisProg);
+Clear(col_AxisRespProg);
+Clear(col_LMPerformanceLoop)
+)
