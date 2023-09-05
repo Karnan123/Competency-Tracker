@@ -1,0 +1,645 @@
+//Graduate Screen (On Visible).
+//Collects all responses from col_Responses
+ClearCollect(
+    col_AllClaims,
+    ShowColumns(
+        col_Responses,
+        "DateTime",
+        "UserID",
+        "LevelID",
+        "PctComplete",
+        "Status",
+        "ResponseLevel"
+    )
+);
+//Merges response list with the col_levels list. 
+Clear(col_AllMergedResponses);
+ClearCollect(
+    col_AllMergedResponses,
+    DropColumns(
+        Ungroup(
+            AddColumns(
+                col_AllClaims As Response,
+                "tempResponseHolder",
+                Filter(
+                    col_Levels,
+                    Lower(Title) = Lower(Response.LevelID)
+                )
+            ),
+            "tempResponseHolder"
+        ),
+        "Title"
+    )
+);
+//Merges col_AllMergedResponses with the col_SubCompetency list. 
+ClearCollect(
+    col_AllMergedResponsesWithSubComp,
+    DropColumns(
+        Ungroup(
+            AddColumns(
+                col_AllMergedResponses As Response,
+                "tempResponseHolder2",
+                Filter(
+                    col_SubCompetency,
+                    Lower(Title) = Lower(Response.SkillID)
+                )
+            ),
+            "tempResponseHolder2"
+        ),
+        "Title",
+        "ID",
+        "Sub_x002d_CompetencyDescription"
+        //This used to drop column competency
+    )
+);
+//Divides each response level by the level required to calculate the progress in that skill.
+ClearCollect(
+    col_AllResponsesWithPctComp,
+    AddColumns(
+        col_AllMergedResponsesWithSubComp,
+        "Skills Completed",
+        (Round(
+            Value(ResponseLevel) / Value(LevelRequired),
+            2
+        )) * 100
+    )
+);
+//Collects all approved skills.
+ClearCollect(
+    col_AllApproved,
+    Filter(
+        col_AllResponsesWithPctComp,
+        Status = "Level Completed"
+    )
+);
+//
+//Collects all responses.
+ClearCollect(
+    col_Responses,
+    ShowColumns(
+        'gdp-can-responses',
+        "Title",
+        "UserID",
+        "LevelID",
+        "DateTime",
+        "ResponseLevel",
+        "ResponseText",
+        "PctComplete",
+        "Status"
+    )
+);
+//Collects all responses with response text removed. 
+ClearCollect(
+    col_GradAllSkills,
+    RenameColumns(
+        ShowColumns(
+            col_Responses,
+            "DateTime",
+            "UserID",
+            "LevelID",
+            "PctComplete",
+            "Status",
+            "ResponseLevel",
+            "Title"
+        ),
+        "Title",
+        "RespID"
+    )
+);
+//Merges responses with col_Levels list. 
+ClearCollect(
+    col_GradAllSkillsWithLev,
+    DropColumns(
+        Ungroup(
+            AddColumns(
+                col_GradAllSkills As Response,
+                "tempResponseHolder",
+                Filter(
+                    col_Levels,
+                    Lower(Title) = Lower(Response.LevelID)
+                )
+            ),
+            "tempResponseHolder"
+        ),
+        "Title"
+    )
+);
+//Merges col_GradAllSkillsWithLev with col_SubCompetency collection. 
+ClearCollect(
+    col_GradAllSkillsWithSubComp,
+    DropColumns(
+        Ungroup(
+            AddColumns(
+                Filter(
+                    col_GradAllSkillsWithLev,
+                    UserID = vID
+                ) As Response,
+                "tempResponseHolder2",
+                Filter(
+                    col_SubCompetency,
+                    Lower(Title) = Lower(Response.SkillID)
+                )
+            ),
+            "tempResponseHolder2"
+        ),
+        "Title",
+        "Competency",
+        "ID",
+        "Sub_x002d_CompetencyDescription"
+    )
+);
+//Collects approved responses with graduate's Id
+ClearCollect(
+    col_GradApproved,
+    Filter(
+        col_AllApproved,
+        UserID = vID
+    )
+);
+//Bug Fixed Code
+//Sorts responses in descending order.
+ClearCollect(
+    col_GradApprovedSortDate,
+    Sort(
+        col_GradApproved,
+        DateTime,
+        SortOrder.Descending
+    )
+);
+//Groups responses by user and levelID. Then it chooses the first response out of each group.
+ClearCollect(
+    col_GradLatestApprovedTable,
+    DropColumns(
+        AddColumns(
+            GroupBy(
+                col_GradApprovedSortDate,
+                "LevelID",
+                "RespByLevel"
+            ),
+            "FirstRecord",
+            First(RespByLevel)
+        ),
+        "RespByLevel"
+    )
+);
+//Coverts the col_GradLatestApprovedTable group collection to a record list.
+ClearCollect(
+    col_GradLatestApproved,
+    DropColumns(
+        AddColumns(
+            col_GradLatestApprovedTable,
+            "DateTime",
+            FirstRecord.DateTime,
+            "LevelRequired",
+            FirstRecord.LevelRequired,
+            "Skills Completed",
+            FirstRecord.'Skills Completed',
+            "PctComplete",
+            FirstRecord.PctComplete,
+            "ResponseLevel",
+            FirstRecord.ResponseLevel,
+            "ServiceLine",
+            FirstRecord.ServiceLine,
+            "SkillID",
+            FirstRecord.SkillID,
+            "Status",
+            FirstRecord.Status,
+            "Sub_x002d_Competency",
+            FirstRecord.Sub_x002d_Competency,
+            "UserID",
+            FirstRecord.UserID
+        ),
+        "FirstRecord"
+    )
+);
+//Bug Fixed Code
+//Collects approved responses with distinct levels.
+/*
+ClearCollect(
+    col_GradResponsesDistinctLev,
+    DropColumns(
+        AddColumns(
+            GroupBy(
+                Sort(
+                    col_GradApproved,
+                    DateTime,
+                    SortOrder.Descending
+                ),
+                "LevelID",
+                "RespByLevel"
+            ),
+            "DistinctLev",
+            Distinct(
+                RespByLevel,
+                ResponseLevel
+            ),
+            "DistinctLevCount",
+            CountRows(
+                Distinct(
+                    RespByLevel,
+                    ResponseLevel
+                )
+            )
+        ),
+        "RespByLevel"
+    )
+);*/
+//Collects most recent responses that has a distinct level.
+ClearCollect(
+    col_GradResponsesDistinctSkillsTable,
+    DropColumns(
+        AddColumns(
+            GroupBy(
+                Sort(
+                    col_GradAllSkillsWithSubComp,
+                    DateTime,
+                    SortOrder.Descending
+                ),
+                "LevelID",
+                "RespByLevel"
+            ),
+            "FirstRecord",
+            First(RespByLevel)
+        ),
+        "RespByLevel"
+    )
+);
+//Coverts the col_GradResponsesDistinctSkillsTable group collection to a record list.
+ClearCollect(
+    col_GradResponsesDistinctSkills,
+    DropColumns(
+        AddColumns(
+            col_GradResponsesDistinctSkillsTable,
+            "DateTime",
+            FirstRecord.DateTime,
+            "LevelRequired",
+            FirstRecord.LevelRequired,
+            "PctComplete",
+            FirstRecord.PctComplete,
+            "ResponseLevel",
+            FirstRecord.ResponseLevel,
+            "ServiceLine",
+            FirstRecord.ServiceLine,
+            "SkillID",
+            FirstRecord.SkillID,
+            "Status",
+            FirstRecord.Status,
+            "Sub_x002d_Competency",
+            FirstRecord.Sub_x002d_Competency
+        ),
+        "FirstRecord"
+    )
+);
+//Calulates the overall progress of the approved accounts in various stages.
+Set(
+    vGradSkillProgress,
+    Round(
+        Sum(
+            col_GradLatestApproved,
+            ResponseLevel
+        ),
+        2
+    )
+);
+Set(
+    vGradSkillProgressPend,
+    /*Round(
+        Sum(
+            Filter(
+                col_GradResponsesDistinctSkills,
+                Status = "Pending"
+            ),
+            ResponseLevel
+        ),
+        2
+    )*/
+    CountRows(
+        Filter(
+            col_GradResponsesDistinctSkills,
+            Status = "Pending"
+        )
+    )
+);
+Set(
+    vGradSkillProgressLevProgApp,
+    CountRows(
+        Filter(
+            col_GradResponsesDistinctSkills,
+            Status = "Level Progress Approved"
+        )
+    )
+);
+Set(
+    vGradSkillProgressDeclined,
+    CountRows(
+        Filter(
+            col_GradResponsesDistinctSkills,
+            Status = "Declined"
+        )
+    )
+);
+//Calulates the overall progress of the approved accounts in various stages by percentage.
+Set(
+    vGradCompProgress,
+    Round(
+        (Sum(
+            col_GradLatestApproved,
+            ResponseLevel
+        ) / (Sum(
+            col_ServiceLine_Levels,
+            LevelRequired
+        ))) * 100,
+        2
+    )
+);
+Set(
+    vGradCompProgressPend,
+    Round(
+        (CountRows(
+            Filter(
+                col_GradResponsesDistinctSkills,
+                Status = "Pending"
+            )
+        ) / (Sum(
+            col_ServiceLine_Levels,
+            LevelRequired
+        ))) * 100,
+        2
+    )
+);
+Set(
+    vGradCompProgressLevProgApp,
+    Round(
+        (CountRows(
+            Filter(
+                col_GradResponsesDistinctSkills,
+                Status = "Level Progress Approved"
+            )
+        ) / (Sum(
+            col_ServiceLine_Levels,
+            LevelRequired
+        ))) * 100,
+        2
+    )
+);
+Set(
+    vGradCompProgressDeclined,
+    Round(
+        (CountRows(
+            Filter(
+                col_GradResponsesDistinctSkills,
+                Status = "Declined"
+            )
+        ) / (Sum(
+            col_ServiceLine_Levels,
+            LevelRequired
+        ))) * 100,
+        2
+    )
+);
+//Visual progression numbers for Gradaute Progress Pie chart.
+ClearCollect(
+    col_GradAllCompProgress,
+    {
+        Name: "Pending Skills",
+        NamePercent: "Pending (" & vGradSkillProgressPend & ")",
+        Value: vGradCompProgressPend & "%"
+    },
+    {
+        Name: "Declined Skills",
+        NamePercent: "Declined (" & vGradSkillProgressDeclined & ")",
+        Value: vGradCompProgressDeclined & "%"
+    },
+    {
+        Name: "Level Progress Approved Skills",
+        NamePercent: "Level Progress Approved (" & vGradSkillProgressLevProgApp & ")",
+        Value: vGradCompProgressLevProgApp & "%"
+    },
+    {
+        Name: "Completed Skills",
+        NamePercent: "Level Completed (" & vGradSkillProgress & ")",
+        Value: vGradCompProgress & "%"
+    },
+    {
+        Name: "Not Started",
+        NamePercent: "Not Started (" & vServiceLineLev - vGradSkillProgress - vGradSkillProgressPend - vGradSkillProgressDeclined - vGradSkillProgressLevProgApp & ")",
+        Value: 100 - vGradCompProgress - vGradCompProgressPend - vGradCompProgressDeclined - vGradCompProgressLevProgApp & "%"
+    }
+);
+//Creates a copy of the col_GradLatestApproved collection. 
+ClearCollect(
+    col_GradLevEarned,
+    Filter(
+        col_GradLatestApproved,
+        Status = "Level Completed"
+    )
+);
+//Filters for the latest pending responses. 
+ClearCollect(
+    col_GradResponsesDistinctPendTable,
+    DropColumns(
+        AddColumns(
+            GroupBy(
+                Sort(
+                    Filter(
+                        col_GradAllSkillsWithSubComp,
+                        Status = "Pending"
+                    ),
+                    DateTime,
+                    SortOrder.Descending
+                ),
+                "LevelID",
+                "RespByLevel"
+            ),
+            "FirstRecord",
+            First(RespByLevel)
+        ),
+        "RespByLevel"
+    )
+);
+//Coverts the col_GradResponsesDistinctPendTable group collection to a record list.
+ClearCollect(
+    col_GradResponsesDistinctPend,
+    DropColumns(
+        AddColumns(
+            col_GradResponsesDistinctPendTable,
+            "RespID",
+            FirstRecord.RespID,
+            "DateTime",
+            FirstRecord.DateTime,
+            "LevelRequired",
+            FirstRecord.LevelRequired,
+            "PctComplete",
+            FirstRecord.PctComplete,
+            "ResponseLevel",
+            FirstRecord.ResponseLevel,
+            "ServiceLine",
+            FirstRecord.ServiceLine,
+            "SkillID",
+            FirstRecord.SkillID,
+            "Status",
+            FirstRecord.Status,
+            "Sub_x002d_Competency",
+            FirstRecord.Sub_x002d_Competency
+        ),
+        "FirstRecord"
+    )
+);
+//Filters for the latest approved responses. 
+ClearCollect(
+    col_GradResponsesDistinctLevCompTable,
+    DropColumns(
+        AddColumns(
+            GroupBy(
+                Sort(
+                    Filter(
+                        col_GradAllSkillsWithSubComp,
+                        Status = "Level Completed"
+                    ),
+                    DateTime,
+                    SortOrder.Descending
+                ),
+                "LevelID",
+                "RespByLevel"
+            ),
+            "FirstRecord",
+            First(RespByLevel)
+        ),
+        "RespByLevel"
+    )
+);
+//Coverts the col_GradResponsesDistinctLevCompTable group collection to a record list.
+ClearCollect(
+    col_GradResponsesDistinctLevComp,
+    DropColumns(
+        AddColumns(
+            col_GradResponsesDistinctLevCompTable,
+            "RespID",
+            FirstRecord.RespID,
+            "DateTime",
+            FirstRecord.DateTime,
+            "LevelRequired",
+            FirstRecord.LevelRequired,
+            "PctComplete",
+            FirstRecord.PctComplete,
+            "ResponseLevel",
+            FirstRecord.ResponseLevel,
+            "ServiceLine",
+            FirstRecord.ServiceLine,
+            "SkillID",
+            FirstRecord.SkillID,
+            "Status",
+            FirstRecord.Status,
+            "Sub_x002d_Competency",
+            FirstRecord.Sub_x002d_Competency
+        ),
+        "FirstRecord"
+    )
+);
+//Filters for the latest level progress approved responses. 
+ClearCollect(
+    col_GradResponsesDistinctLevProgTable,
+    DropColumns(
+        AddColumns(
+            GroupBy(
+                Sort(
+                    Filter(
+                        col_GradAllSkillsWithSubComp,
+                        Status = "Level Progress Approved"
+                    ),
+                    DateTime,
+                    SortOrder.Descending
+                ),
+                "LevelID",
+                "RespByLevel"
+            ),
+            "FirstRecord",
+            First(RespByLevel)
+        ),
+        "RespByLevel"
+    )
+);
+//Coverts the col_GradResponsesDistinctLevProgTable group collection to a record list.
+ClearCollect(
+    col_GradResponsesDistinctLevProg,
+    DropColumns(
+        AddColumns(
+            col_GradResponsesDistinctLevProgTable,
+            "RespID",
+            FirstRecord.RespID,
+            "DateTime",
+            FirstRecord.DateTime,
+            "LevelRequired",
+            FirstRecord.LevelRequired,
+            "PctComplete",
+            FirstRecord.PctComplete,
+            "ResponseLevel",
+            FirstRecord.ResponseLevel,
+            "ServiceLine",
+            FirstRecord.ServiceLine,
+            "SkillID",
+            FirstRecord.SkillID,
+            "Status",
+            FirstRecord.Status,
+            "Sub_x002d_Competency",
+            FirstRecord.Sub_x002d_Competency
+        ),
+        "FirstRecord"
+    )
+);
+//Filters for the latest declined responses. 
+ClearCollect(
+    col_GradResponsesDistinctDeclinedTable,
+    DropColumns(
+        AddColumns(
+            GroupBy(
+                Sort(
+                    Filter(
+                        col_GradAllSkillsWithSubComp,
+                        Status = "Declined"
+                    ),
+                    DateTime,
+                    SortOrder.Descending
+                ),
+                "LevelID",
+                "RespByLevel"
+            ),
+            "FirstRecord",
+            First(RespByLevel)
+        ),
+        "RespByLevel"
+    )
+);
+//Coverts the col_GradResponsesDistinctDeclinedTable group collection to a record list.
+ClearCollect(
+    col_GradResponsesDistinctDeclined,
+    DropColumns(
+        AddColumns(
+            col_GradResponsesDistinctDeclinedTable,
+            "RespID",
+            FirstRecord.RespID,
+            "DateTime",
+            FirstRecord.DateTime,
+            "LevelRequired",
+            FirstRecord.LevelRequired,
+            "PctComplete",
+            FirstRecord.PctComplete,
+            "ResponseLevel",
+            FirstRecord.ResponseLevel,
+            "ServiceLine",
+            FirstRecord.ServiceLine,
+            "SkillID",
+            FirstRecord.SkillID,
+            "Status",
+            FirstRecord.Status,
+            "Sub_x002d_Competency",
+            FirstRecord.Sub_x002d_Competency
+        ),
+        "FirstRecord"
+    )
+);
+//Turns off loading spinner.
+Set(
+    vLoadSpin,
+    false
+);
