@@ -11,4 +11,6 @@ Revolutionize your skill development with this cutting-edge competency tracker a
   
 - Seamless Data Collection: The app seamlessly integrates with SharePoint for data collection, ensuring real-time updates and facilitating instant progress tracking. This data-driven approach enhances decision-making and resource allocation.
 
+<br>
+
 <img width="810" alt="GradHomePage2" src="https://github.com/Karnan123/Competency-Tracker/assets/86682252/41c859a2-3740-4567-9dc0-6f20be89b1b5">
