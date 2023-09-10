@@ -3,13 +3,13 @@ Revolutionize your skill development with this cutting-edge competency tracker a
 
 <h2>Features</h2>   
 
-- Efficient Skill Progression Tracking: Graduates can take control of their skill development journey by easily submitting completed competencies. This user-friendly interface allows for seamless tracking of individual progress.
+- **Efficient Skill Progression Tracking:** Graduates can take control of their skill development journey by easily submitting completed competencies. This user-friendly interface allows for seamless tracking of individual progress.
 
-- Managerial Oversight: Line managers can efficiently assign competencies, review submissions, and provide valuable feedback to employees. This collaborative approach ensures a smooth approval process.
+- **Managerial Oversight:** Line managers can efficiently assign competencies, review submissions, and provide valuable feedback to employees. This collaborative approach ensures a smooth approval process.
 
-- Visual Insights: Completed competencies are graphically represented, offering a clear and visually appealing overview of skill progression. Managers gain valuable insights into overall completion rates.
+- **Visual Insights:** Completed competencies are graphically represented, offering a clear and visually appealing overview of skill progression. Managers gain valuable insights into overall completion rates.
   
-- Seamless Data Collection: The app seamlessly integrates with SharePoint for data collection, ensuring real-time updates and facilitating instant progress tracking. This data-driven approach enhances decision-making and resource allocation.
+- **Seamless Data Collection:** The app seamlessly integrates with SharePoint for data collection, ensuring real-time updates and facilitating instant progress tracking. This data-driven approach enhances decision-making and resource allocation.
 
 <br>
 
