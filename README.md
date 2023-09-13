@@ -33,7 +33,11 @@ The homepage serves as your central hub for managing competency responses and ke
 
 <h2>Line Manager Feedback</h2>As a graduate, feedback is a valuable resource for your professional growth. Here's how you can benefit from it: 
 
-- **Feedback Insights**: Access feedback from your line manager to gain insights into your performance. Discover what you did well in your responses and receive guidance on how to enhance your competencies in the future. ## Skill Progress Visualization Keeping track of your competency progress is essential. Here's a unique feature available to graduates: 
+- **Feedback Insights**: Access feedback from your line manager to gain insights into your performance. Discover what you did well in your responses and receive guidance on how to enhance your competencies in the future.
+
+<h2>Skill Progress Visualization<\h2>
+  
+Keeping track of your competency progress is essential. Here's a unique feature available to graduates: 
 
 - **Pie Chart Visualization**: View a pie chart representing your approved and in-progress skills. This visual representation helps you quickly identify which skills have been reviewed by your line manager and provides an at-a-glance overview of your progress.
 
