@@ -29,13 +29,17 @@ The homepage serves as your central hub for managing competency responses and ke
   
 <h2>Create Skill List</h2> From the homepage , you can access the create skill list, which provides detailed information on each competency. Here's what you'll find: 
 
+
 <br>
 
 - **Skill Requirements**: Read through the specific requirements for each skill, ensuring you understand what's expected when submitting a response.
+  
 - **Task Descriptions**: Access comprehensive descriptions of the tasks and objectives you need to accomplish to submit a response successfully. 
 
 <h2>Line Manager Feedback</h2>
+
 As a graduate, feedback is a valuable resource for your professional growth. Here's how you can benefit from it: 
+
 
 <br>
 
