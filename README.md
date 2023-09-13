@@ -58,4 +58,4 @@ Keeping track of your competency progress is essential. Here's a unique feature 
 We understand that growth is an ongoing process, and sometimes you may want to revisit and improve your past responses. As a graduate, you have the flexibility to do so:
 
 
-- **Edit Old Responses**: You can edit responses that have not been approved, allowing you to update and enhance your submissions as you make further progress in your competencies. The graduate role in our app empowers you to take control of your professional development by providing the tools and information you need to succeed.
+- **Edit Old Responses**: You can edit responses that have not been approved, allowing you to update and enhance your submissions as you make further progress in your competencies.
