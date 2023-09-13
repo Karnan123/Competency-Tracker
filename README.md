@@ -37,5 +37,8 @@ The homepage serves as your central hub for managing competency responses and ke
 
 - **Pie Chart Visualization**: View a pie chart representing your approved and in-progress skills. This visual representation helps you quickly identify which skills have been reviewed by your line manager and provides an at-a-glance overview of your progress.
 
-## Edit Old Responses We understand that growth is an ongoing process, and sometimes you may want to revisit and improve your past responses. As a graduate, you have the flexibility to do so:
+<h2>Edit Old Responses</h2>
+
+We understand that growth is an ongoing process, and sometimes you may want to revisit and improve your past responses. As a graduate, you have the flexibility to do so:
+
 - **Edit Old Responses**: You can edit responses that have not been approved, allowing you to update and enhance your submissions as you make further progress in your competencies. The graduate role in our app empowers you to take control of your professional development by providing the tools and information you need to succeed.
