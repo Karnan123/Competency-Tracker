@@ -36,7 +36,7 @@ The homepage serves as your central hub for managing competency responses and ke
 <h2>Line Manager Feedback</h2>
 As a graduate, feedback is a valuable resource for your professional growth. Here's how you can benefit from it: 
 
-
+<br>
 - **Feedback Insights**: Access feedback from your line manager to gain insights into your performance. Discover what you did well in your responses and receive guidance on how to enhance your competencies in the future.
 
 <h2>Skill Progress Visualization</h2>
