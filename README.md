@@ -25,6 +25,7 @@ The homepage serves as your central hub for managing competency responses and ke
 
 
 - **Agenda**: The homepage acts like an agenda, displaying a summary of skills that have been approved or declined by your line manager. This gives you an overview of your current competency status.
+  
 - **Review Old Responses**: Access a list of your previously submitted responses, allowing you to revisit and reflect on your past performance.
   
 <h2>Create Skill List</h2> From the homepage , you can access the create skill list, which provides detailed information on each competency. Here's what you'll find: 
