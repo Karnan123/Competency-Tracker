@@ -35,7 +35,7 @@ The homepage serves as your central hub for managing competency responses and ke
 
 - **Feedback Insights**: Access feedback from your line manager to gain insights into your performance. Discover what you did well in your responses and receive guidance on how to enhance your competencies in the future.
 
-<h2>Skill Progress Visualization<\h2>
+<h2>Skill Progress Visualization</h2>
   
 Keeping track of your competency progress is essential. Here's a unique feature available to graduates: 
 
