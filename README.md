@@ -15,7 +15,7 @@ Revolutionize your skill development with this cutting-edge competency tracker a
 
 <img width="810" alt="GradHomePage2" src="https://github.com/Karnan123/Competency-Tracker/assets/86682252/41c859a2-3740-4567-9dc0-6f20be89b1b5">
 
-<h2>Graduate Role</h2> 
+<h1>Graduate Role</h1> 
 
 As a graduate, your role is critical in the competency assessment process. You have the ability to create competency responses, access essential information, and track your progress effectively. 
 
