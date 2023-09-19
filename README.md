@@ -48,6 +48,8 @@ As a graduate, feedback is a valuable resource for your professional growth. Her
 
 - **Feedback Insights**: Access feedback from your line manager to gain insights into your performance. Discover what you did well in your responses and receive guidance on how to enhance your competencies in the future.
 
+<img width="810" src="https://github.com/Karnan123/Competency-Tracker/blob/main/Competency-Tracker-App-Pictures/LMViewFeedback.PNG?raw=true">
+
 <h2>Skill Progress Visualization</h2>
   
 Keeping track of your competency progress is essential. Here's a unique feature available to graduates: 
