@@ -15,6 +15,8 @@ Revolutionize your skill development with this cutting-edge competency tracker a
 
 <img width="810" alt="GradHomePage2" src="https://github.com/Karnan123/Competency-Tracker/assets/86682252/41c859a2-3740-4567-9dc0-6f20be89b1b5">
 
+<br>
+
 <h1>Graduate Role</h1> 
 
 As a graduate, your role is critical in the competency assessment process. You have the ability to create competency responses, access essential information, and track your progress effectively. 
@@ -39,6 +41,8 @@ The homepage serves as your central hub for managing competency responses and ke
 
 <img width="810" src="https://github.com/Karnan123/Competency-Tracker/blob/main/Competency-Tracker-App-Pictures/GradSub_Competencies.PNG?raw=true">
 
+<br>
+
 <h2>Line Manager Feedback</h2>
 
 As a graduate, feedback is a valuable resource for your professional growth. Here's how you can benefit from it: 
@@ -49,6 +53,8 @@ As a graduate, feedback is a valuable resource for your professional growth. Her
 - **Feedback Insights**: Access feedback from your line manager to gain insights into your performance. Discover what you did well in your responses and receive guidance on how to enhance your competencies in the future.
 
 <img width="810" src="https://github.com/Karnan123/Competency-Tracker/blob/main/Competency-Tracker-App-Pictures/LMViewFeedback.PNG?raw=true">
+
+<br>
 
 <h2>Skill Progress Visualization</h2>
   
