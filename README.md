@@ -39,6 +39,8 @@ The homepage serves as your central hub for managing competency responses and ke
   
 - **Task Descriptions**: Access comprehensive descriptions of the tasks and objectives you need to accomplish to submit a response successfully. 
 
+<br>
+
 <img width="810" src="https://github.com/Karnan123/Competency-Tracker/blob/main/Competency-Tracker-App-Pictures/GradSub_Competencies.PNG?raw=true">
 
 <br>
@@ -51,6 +53,8 @@ As a graduate, feedback is a valuable resource for your professional growth. Her
 
 
 - **Feedback Insights**: Access feedback from your line manager to gain insights into your performance. Discover what you did well in your responses and receive guidance on how to enhance your competencies in the future.
+
+<br>
 
 <img width="810" src="https://github.com/Karnan123/Competency-Tracker/blob/main/Competency-Tracker-App-Pictures/LMViewFeedback.PNG?raw=true">
 
@@ -69,6 +73,8 @@ We understand that growth is an ongoing process, and sometimes you may want to r
 
 
 - **Edit Old Responses**: You can edit responses that have not been approved, allowing you to update and enhance your submissions as you make further progress in your competencies.
+
+<br>
 
 <img width="810" src="https://github.com/Karnan123/Competency-Tracker/blob/main/Competency-Tracker-App-Pictures/GradViewResponse.PNG?raw=true">
 
