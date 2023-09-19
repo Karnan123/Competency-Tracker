@@ -61,6 +61,10 @@ Keeping track of your competency progress is essential. Here's a unique feature 
 
 - **Pie Chart Visualization**: View a pie chart representing your approved and in-progress skills. This visual representation helps you quickly identify which skills have been reviewed by your line manager and provides an at-a-glance overview of your progress.
 
+<br>
+
+<img width="810" src="https://github.com/Karnan123/Competency-Tracker/blob/main/Competency-Tracker-App-Pictures/GradPieChart.png?raw=true">
+
 <h2>Edit Old Responses</h2>
 
 We understand that growth is an ongoing process, and sometimes you may want to revisit and improve your past responses. As a graduate, you have the flexibility to do so:
