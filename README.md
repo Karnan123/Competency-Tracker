@@ -37,6 +37,7 @@ The homepage serves as your central hub for managing competency responses and ke
   
 - **Task Descriptions**: Access comprehensive descriptions of the tasks and objectives you need to accomplish to submit a response successfully. 
 
+<img width="810" alt= "Skill List" scr="https://github.com/Karnan123/Competency-Tracker/blob/main/Competency-Tracker-App-Pictures/GradSub_Competencies.PNG?raw=true">
 <h2>Line Manager Feedback</h2>
 
 As a graduate, feedback is a valuable resource for your professional growth. Here's how you can benefit from it: 
