@@ -61,3 +61,5 @@ We understand that growth is an ongoing process, and sometimes you may want to r
 
 
 - **Edit Old Responses**: You can edit responses that have not been approved, allowing you to update and enhance your submissions as you make further progress in your competencies.
+
+<img width="810" src="https://github.com/Karnan123/Competency-Tracker/blob/main/Competency-Tracker-App-Pictures/GradViewResponse.PNG?raw=true">
